@@ -195,10 +195,11 @@ function sendFile(res, filePath) {
 // ---------------------------------------------------------------------------
 let config = { staff: [], allowedDomain: ALLOWED_DOMAIN };
 try {
-  const raw = fs.readFileSync(path.join(__dirname, 'data', 'config.json'), 'utf-8');
-  config = JSON.parse(raw);
+  const raw = fs.readFileSync(path.join(__dirname, 'data', 'services.json'), 'utf-8');
+  const parsed = JSON.parse(raw);
+  config = { ...parsed, allowedDomain: ALLOWED_DOMAIN }; // env var always wins
 } catch (e) {
-  console.warn('Could not load data/config.json, using defaults:', e.message);
+  console.warn('Could not load data/services.json, using defaults:', e.message);
 }
 
 // ---------------------------------------------------------------------------
@@ -302,7 +303,7 @@ function handleLogin(req, res) {
       </svg>
       Sign in with Google
     </a>
-    <p class="note">Access restricted to @${config.allowedDomain || ALLOWED_DOMAIN} accounts.</p>
+    <p class="note">Access restricted to @${ALLOWED_DOMAIN} accounts.</p>
   </div>
 </body>
 </html>`;
@@ -379,7 +380,7 @@ async function handleOAuthCallback(req, res, searchParams) {
 
   const user = userResp.body;
   const emailDomain = (user.email || '').split('@')[1] || '';
-  const allowed = config.allowedDomain || ALLOWED_DOMAIN;
+  const allowed = ALLOWED_DOMAIN;
 
   if (emailDomain !== allowed) {
     return sendText(
