@@ -278,6 +278,7 @@ function handleLogin(req, res) {
       width: auto;
       display: block;
       flex-shrink: 0;
+      filter: brightness(0) invert(1);
     }
     .logo-text {
       text-align: left;
@@ -331,7 +332,7 @@ function handleLogin(req, res) {
   <div class="login-container">
     <main>
       <div class="logo">
-        <img class="logo-icon" src="/sycamore-logo.jpg" alt="Sycamore Informatics">
+        <img class="logo-icon" src="/sycamore-logo.png" alt="Sycamore Informatics">
         <div class="logo-text">
           <div class="logo-name">Sycamore Informatics</div>
           <div class="logo-sub">Service Operations Portal</div>
@@ -349,7 +350,7 @@ function handleLogin(req, res) {
   <footer>
     <div class="footer-inner">
       <span>Powered by</span>
-      <img class="footer-logo-icon" src="/sycamore-logo.jpg" alt="Sycamore Informatics">
+      <img class="footer-logo-icon" src="/sycamore-logo.png" alt="Sycamore Informatics">
       <span>Sycamore Informatics</span>
     </div>
   </footer>
