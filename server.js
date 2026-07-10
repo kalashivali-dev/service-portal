@@ -240,71 +240,124 @@ function handleLogin(req, res) {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sign In — Service Portal</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: 'DM Sans', sans-serif;
-      background: #0f1117;
-      color: #e2e8f0;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+      background: #0d1117;
+      color: #f0f6fc;
       min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .login-container {
+      flex: 1;
       display: flex;
       align-items: center;
       justify-content: center;
+      padding: 20px;
     }
-    .card {
-      background: #1a1d27;
-      border: 1px solid #2d3148;
-      border-radius: 16px;
-      padding: 48px 40px;
-      width: 100%;
-      max-width: 400px;
+    main {
+      width: min(420px, calc(100vw - 32px));
+      padding: 40px;
+      border: 1px solid rgba(240,246,252,.12);
+      border-radius: 12px;
+      background: #161b22;
       text-align: center;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
     }
     .logo {
-      width: 56px; height: 56px;
-      background: linear-gradient(135deg, #6366f1, #8b5cf6);
-      border-radius: 14px;
+      margin-bottom: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+    .logo-icon {
+      width: 44px; height: 44px;
+      background: linear-gradient(135deg, #1a6fc4, #0ea5e9);
+      border-radius: 10px;
       display: flex; align-items: center; justify-content: center;
-      margin: 0 auto 24px;
-      font-size: 24px; font-weight: 700; color: #fff;
+      font-size: 18px; font-weight: 800; color: #fff;
+      letter-spacing: -0.5px;
+      flex-shrink: 0;
     }
-    h1 { font-size: 22px; font-weight: 600; margin-bottom: 8px; }
-    p { color: #94a3b8; font-size: 14px; margin-bottom: 32px; }
+    .logo-text {
+      text-align: left;
+    }
+    .logo-name {
+      font-size: 15px;
+      font-weight: 600;
+      color: #f0f6fc;
+      line-height: 1.2;
+    }
+    .logo-sub {
+      font-size: 11px;
+      color: #8b949e;
+      margin-top: 2px;
+    }
+    h1 { font-size: 22px; font-weight: 600; margin-bottom: 8px; color: #f0f6fc; }
+    .subtitle { margin: 0 0 32px; color: #8b949e; font-size: 14px; line-height: 1.5; }
     .btn-google {
-      display: inline-flex; align-items: center; gap: 12px;
-      background: #fff; color: #1f2937;
-      border: none; border-radius: 10px;
-      padding: 14px 24px;
-      font-family: 'DM Sans', sans-serif;
-      font-size: 15px; font-weight: 500;
-      cursor: pointer; text-decoration: none;
-      width: 100%; justify-content: center;
-      transition: background 0.15s, box-shadow 0.15s;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+      display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+      min-height: 48px; padding: 0 24px;
+      border-radius: 6px;
+      background: #238636; color: #fff;
+      text-decoration: none;
+      font-family: Inter, sans-serif;
+      font-weight: 600; font-size: 15px;
+      width: 100%;
+      transition: background 0.2s;
     }
-    .btn-google:hover { background: #f1f5f9; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+    .btn-google:hover { background: #2ea043; }
     .btn-google svg { flex-shrink: 0; }
-    .note { margin-top: 20px; font-size: 12px; color: #64748b; }
+    .note { margin-top: 20px; font-size: 12px; color: #8b949e; }
+    footer {
+      padding: 20px;
+      text-align: center;
+      color: #8b949e;
+      font-size: 12px;
+      border-top: 1px solid rgba(240,246,252,.08);
+      font-family: Inter, sans-serif;
+    }
+    .footer-inner {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .footer-logo-icon {
+      width: 18px; height: 18px;
+      background: linear-gradient(135deg, #1a6fc4, #0ea5e9);
+      border-radius: 4px;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 9px; font-weight: 800; color: #fff;
+    }
   </style>
 </head>
 <body>
-  <div class="card">
-    <div class="logo">S</div>
-    <h1>Service Portal</h1>
-    <p>Sign in with your company Google account to continue.</p>
-    <a href="${OAUTH_AUTH_URL}?${params.toString()}" class="btn-google">
-      <svg width="20" height="20" viewBox="0 0 48 48">
-        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
-        <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
-        <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
-        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.36-8.16 2.36-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
-      </svg>
-      Sign in with Google
-    </a>
-    <p class="note">Access restricted to @${ALLOWED_DOMAIN} accounts.</p>
+  <div class="login-container">
+    <main>
+      <div class="logo">
+        <div class="logo-icon">SI</div>
+        <div class="logo-text">
+          <div class="logo-name">Sycamore Informatics</div>
+          <div class="logo-sub">Service Operations Portal</div>
+        </div>
+      </div>
+      <h1>Service Portal</h1>
+      <p class="subtitle">Sign in with your ${ALLOWED_DOMAIN} Google account to continue.</p>
+      <a href="${OAUTH_AUTH_URL}?${params.toString()}" class="btn-google">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12.545,10.239v3.821h5.445c-0.712,2.315-2.647,3.972-5.445,3.972c-3.332,0-6.033-2.701-6.033-6.032s2.701-6.032,6.033-6.032c1.498,0,2.866,0.549,3.921,1.453l2.814-2.814C17.503,2.988,15.139,2,12.545,2C7.021,2,2.543,6.477,2.543,12s4.478,10,10.002,10c8.396,0,10.249-7.85,9.426-11.748L12.545,10.239z"/></svg>
+        Sign in with Google
+      </a>
+      <p class="note">Access restricted to @${ALLOWED_DOMAIN} accounts.</p>
+    </main>
   </div>
+  <footer>
+    <div class="footer-inner">
+      <span>Powered by</span>
+      <div class="footer-logo-icon">SI</div>
+      <span>Sycamore Informatics</span>
+    </div>
+  </footer>
 </body>
 </html>`;
 

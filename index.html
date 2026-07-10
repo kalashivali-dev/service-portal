@@ -392,12 +392,14 @@
     .user-name { font-size: 13px; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .user-email { font-size: 11px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .logout-btn {
-      background: none; border: none; padding: 4px;
-      color: var(--text-muted); border-radius: 4px;
+      background: none; border: none; padding: 6px 10px;
+      color: var(--text-muted); border-radius: 6px;
       transition: color var(--transition), background var(--transition);
-      display: flex; align-items: center;
+      display: flex; align-items: center; gap: 6px;
+      font-family: inherit; font-size: 12px; font-weight: 500;
+      cursor: pointer; white-space: nowrap;
     }
-    .logout-btn:hover { color: var(--text-primary); background: var(--bg-hover); }
+    .logout-btn:hover { color: #ef4444; background: rgba(239,68,68,0.08); }
 
     /* =========================================================
        Main area
@@ -869,7 +871,8 @@
           <div class="user-email" id="sidebar-email"></div>
         </div>
         <button class="logout-btn" id="logout-btn" title="Sign out">
-          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+          Sign out
         </button>
       </div>
     </div>
