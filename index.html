@@ -1,0 +1,1220 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Service Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    /* =========================================================
+       CSS Custom Properties
+       ========================================================= */
+    :root {
+      --sidebar-w: 220px;
+      --header-h: 60px;
+      --radius: 10px;
+      --radius-sm: 6px;
+      --transition: 0.15s ease;
+
+      /* Dark theme (default) */
+      --bg-base:     #0f1117;
+      --bg-surface:  #1a1d27;
+      --bg-surface2: #21253a;
+      --bg-hover:    #262a3d;
+      --border:      #2d3148;
+      --border-light:#373c57;
+
+      --text-primary:  #e2e8f0;
+      --text-secondary:#94a3b8;
+      --text-muted:    #64748b;
+
+      --accent:      #6366f1;
+      --accent-soft: rgba(99,102,241,0.15);
+      --accent-hover:#818cf8;
+
+      --status-open-bg:  rgba(59,130,246,0.15);
+      --status-open-txt: #93c5fd;
+      --status-prog-bg:  rgba(245,158,11,0.15);
+      --status-prog-txt: #fcd34d;
+      --status-done-bg:  rgba(34,197,94,0.15);
+      --status-done-txt: #86efac;
+
+      --p1-bg:  rgba(239,68,68,0.15);  --p1-txt:  #fca5a5;
+      --p2-bg:  rgba(249,115,22,0.15); --p2-txt:  #fdba74;
+      --p3-bg:  rgba(234,179,8,0.15);  --p3-txt:  #fde047;
+      --p4-bg:  rgba(148,163,184,0.1); --p4-txt:  #94a3b8;
+
+      --avail-bg:  rgba(34,197,94,0.12); --avail-txt: #86efac;
+      --busy-bg:   rgba(239,68,68,0.12); --busy-txt:  #fca5a5;
+      --ooo-bg:    rgba(148,163,184,0.1);--ooo-txt:   #94a3b8;
+
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+      --shadow-md: 0 4px 16px rgba(0,0,0,0.4);
+    }
+
+    [data-theme="light"] {
+      --bg-base:     #f1f5f9;
+      --bg-surface:  #ffffff;
+      --bg-surface2: #f8fafc;
+      --bg-hover:    #f1f5f9;
+      --border:      #e2e8f0;
+      --border-light:#cbd5e1;
+
+      --text-primary:  #0f172a;
+      --text-secondary:#475569;
+      --text-muted:    #94a3b8;
+
+      --accent:      #6366f1;
+      --accent-soft: rgba(99,102,241,0.08);
+      --accent-hover:#4f46e5;
+
+      --status-open-bg:  rgba(59,130,246,0.1);
+      --status-open-txt: #1d4ed8;
+      --status-prog-bg:  rgba(245,158,11,0.1);
+      --status-prog-txt: #b45309;
+      --status-done-bg:  rgba(34,197,94,0.1);
+      --status-done-txt: #166534;
+
+      --p1-bg:  rgba(239,68,68,0.1);  --p1-txt:  #b91c1c;
+      --p2-bg:  rgba(249,115,22,0.1); --p2-txt:  #c2410c;
+      --p3-bg:  rgba(234,179,8,0.1);  --p3-txt:  #92400e;
+      --p4-bg:  rgba(148,163,184,0.1);--p4-txt:  #475569;
+
+      --avail-bg:  rgba(34,197,94,0.1); --avail-txt: #166534;
+      --busy-bg:   rgba(239,68,68,0.1); --busy-txt:  #b91c1c;
+      --ooo-bg:    rgba(148,163,184,0.1);--ooo-txt:  #475569;
+
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+      --shadow-md: 0 4px 16px rgba(0,0,0,0.1);
+    }
+
+    /* =========================================================
+       Reset & Base
+       ========================================================= */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      font-family: 'DM Sans', system-ui, sans-serif;
+      background: var(--bg-base);
+      color: var(--text-primary);
+      font-size: 14px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    button { cursor: pointer; font-family: inherit; }
+    table { border-collapse: collapse; width: 100%; }
+
+    /* =========================================================
+       Layout shell
+       ========================================================= */
+    #app {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* =========================================================
+       Sidebar
+       ========================================================= */
+    #sidebar {
+      width: var(--sidebar-w);
+      flex-shrink: 0;
+      background: var(--bg-surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0; left: 0;
+      height: 100vh;
+      z-index: 100;
+      transition: transform var(--transition);
+    }
+
+    .sidebar-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 20px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .sidebar-logo .logo-icon {
+      width: 34px; height: 34px;
+      background: linear-gradient(135deg, var(--accent), #8b5cf6);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; font-weight: 700; color: #fff;
+      flex-shrink: 0;
+    }
+    .sidebar-logo .logo-text {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+      line-height: 1.2;
+    }
+    .sidebar-logo .logo-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .sidebar-nav {
+      flex: 1;
+      padding: 12px 8px;
+      overflow-y: auto;
+    }
+    .sidebar-nav .nav-section-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      padding: 8px 8px 4px;
+    }
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 10px;
+      border-radius: var(--radius-sm);
+      color: var(--text-secondary);
+      font-size: 13.5px;
+      font-weight: 500;
+      transition: background var(--transition), color var(--transition);
+      text-decoration: none;
+      cursor: pointer;
+      border: none;
+      background: none;
+      width: 100%;
+      text-align: left;
+    }
+    .nav-link:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+    }
+    .nav-link.active {
+      background: var(--accent-soft);
+      color: var(--accent-hover);
+    }
+    .nav-link svg {
+      flex-shrink: 0;
+      opacity: 0.75;
+    }
+    .nav-link.active svg { opacity: 1; }
+
+    .sidebar-footer {
+      padding: 12px;
+      border-top: 1px solid var(--border);
+    }
+    .user-card {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px;
+      border-radius: var(--radius-sm);
+    }
+    .user-avatar {
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      background: var(--accent-soft);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 600; color: var(--accent-hover);
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .user-info { flex: 1; min-width: 0; }
+    .user-name { font-size: 13px; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .user-email { font-size: 11px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .logout-btn {
+      background: none; border: none; padding: 4px;
+      color: var(--text-muted); border-radius: 4px;
+      transition: color var(--transition), background var(--transition);
+      display: flex; align-items: center;
+    }
+    .logout-btn:hover { color: var(--text-primary); background: var(--bg-hover); }
+
+    /* =========================================================
+       Main area
+       ========================================================= */
+    #main-wrap {
+      margin-left: var(--sidebar-w);
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    #header {
+      height: var(--header-h);
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      position: sticky; top: 0; z-index: 50;
+    }
+    .header-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .header-actions {
+      display: flex; align-items: center; gap: 8px;
+    }
+    .theme-toggle {
+      background: var(--bg-surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 6px 10px;
+      color: var(--text-secondary);
+      font-size: 13px;
+      font-weight: 500;
+      display: flex; align-items: center; gap: 6px;
+      transition: background var(--transition), border-color var(--transition);
+    }
+    .theme-toggle:hover { background: var(--bg-hover); border-color: var(--border-light); color: var(--text-primary); }
+    .header-avatar {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: var(--accent-soft);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 600; color: var(--accent-hover);
+      overflow: hidden;
+    }
+    .header-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+    #content {
+      flex: 1;
+      padding: 24px;
+      overflow-y: auto;
+    }
+
+    /* =========================================================
+       Page sections (tab routing)
+       ========================================================= */
+    .page { display: none; }
+    .page.active { display: block; }
+
+    .page-header {
+      margin-bottom: 24px;
+    }
+    .page-header h2 {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    .page-header p {
+      color: var(--text-secondary);
+      margin-top: 4px;
+      font-size: 13.5px;
+    }
+
+    /* =========================================================
+       Stat cards
+       ========================================================= */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .stat-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow-sm);
+    }
+    .stat-card .stat-label {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+    .stat-card .stat-value {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+    .stat-card .stat-sub {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+    .stat-card .stat-icon {
+      float: right;
+      margin-top: -32px;
+      width: 40px; height: 40px;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    .stat-icon.blue  { background: var(--status-open-bg); color: var(--status-open-txt); }
+    .stat-icon.amber { background: var(--status-prog-bg); color: var(--status-prog-txt); }
+    .stat-icon.green { background: var(--status-done-bg); color: var(--status-done-txt); }
+    .stat-icon.indigo{ background: var(--accent-soft);    color: var(--accent-hover); }
+
+    /* =========================================================
+       Activity feed
+       ========================================================= */
+    .section-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 14px;
+    }
+    .card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow-sm);
+    }
+    .activity-list { list-style: none; }
+    .activity-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .activity-item:last-child { border-bottom: none; }
+    .activity-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      margin-top: 6px;
+      flex-shrink: 0;
+    }
+    .dot-blue  { background: var(--status-open-txt); }
+    .dot-amber { background: var(--status-prog-txt); }
+    .dot-green { background: var(--status-done-txt); }
+    .activity-text { font-size: 13.5px; color: var(--text-primary); }
+    .activity-time { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+    /* =========================================================
+       Cases table
+       ========================================================= */
+    .filter-tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0;
+    }
+    .filter-tab {
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      padding: 8px 14px;
+      margin-bottom: -1px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      transition: color var(--transition), border-color var(--transition);
+    }
+    .filter-tab:hover { color: var(--text-primary); }
+    .filter-tab.active { color: var(--accent-hover); border-bottom-color: var(--accent); }
+
+    .table-wrap {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }
+    table th {
+      background: var(--bg-surface2);
+      padding: 10px 14px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+    }
+    table td {
+      padding: 12px 14px;
+      font-size: 13.5px;
+      color: var(--text-primary);
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: var(--bg-hover); }
+    .case-id { font-family: monospace; font-size: 12px; color: var(--text-muted); }
+
+    /* =========================================================
+       Badges / Pills
+       ========================================================= */
+    .badge {
+      display: inline-flex; align-items: center;
+      padding: 3px 9px;
+      border-radius: 20px;
+      font-size: 11.5px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .badge-open   { background: var(--status-open-bg); color: var(--status-open-txt); }
+    .badge-prog   { background: var(--status-prog-bg); color: var(--status-prog-txt); }
+    .badge-done   { background: var(--status-done-bg); color: var(--status-done-txt); }
+    .badge-p1     { background: var(--p1-bg);  color: var(--p1-txt); }
+    .badge-p2     { background: var(--p2-bg);  color: var(--p2-txt); }
+    .badge-p3     { background: var(--p3-bg);  color: var(--p3-txt); }
+    .badge-p4     { background: var(--p4-bg);  color: var(--p4-txt); }
+    .badge-avail  { background: var(--avail-bg); color: var(--avail-txt); }
+    .badge-busy   { background: var(--busy-bg);  color: var(--busy-txt); }
+    .badge-ooo    { background: var(--ooo-bg);   color: var(--ooo-txt); }
+
+    /* =========================================================
+       Staff cards
+       ========================================================= */
+    .staff-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 16px;
+    }
+    .staff-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .staff-card-header {
+      display: flex; align-items: center; gap: 12px;
+    }
+    .staff-avatar {
+      width: 42px; height: 42px;
+      border-radius: 50%;
+      background: var(--accent-soft);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; font-weight: 700; color: var(--accent-hover);
+      flex-shrink: 0;
+    }
+    .staff-name { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+    .staff-role { font-size: 12px; color: var(--text-secondary); }
+    .staff-meta {
+      display: flex; align-items: center; justify-content: space-between;
+      padding-top: 8px;
+      border-top: 1px solid var(--border);
+    }
+    .staff-dept { font-size: 12px; color: var(--text-muted); }
+
+    /* =========================================================
+       Wiki
+       ========================================================= */
+    .wiki-layout {
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+    }
+    .wiki-sidebar {
+      width: 220px;
+      flex-shrink: 0;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: var(--shadow-sm);
+      position: sticky;
+      top: calc(var(--header-h) + 24px);
+    }
+    .wiki-sidebar h3 { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 10px; }
+    .wiki-search {
+      width: 100%;
+      background: var(--bg-surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 7px 10px;
+      font-size: 13px;
+      color: var(--text-primary);
+      margin-bottom: 12px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color var(--transition);
+    }
+    .wiki-search:focus { border-color: var(--accent); }
+    .wiki-search::placeholder { color: var(--text-muted); }
+    .wiki-nav-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: background var(--transition), color var(--transition);
+      border: none;
+      background: none;
+      width: 100%;
+      text-align: left;
+    }
+    .wiki-nav-item:hover { background: var(--bg-hover); color: var(--text-primary); }
+    .wiki-nav-item.active { background: var(--accent-soft); color: var(--accent-hover); font-weight: 500; }
+    .wiki-content {
+      flex: 1;
+      min-width: 0;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px 32px;
+      box-shadow: var(--shadow-sm);
+    }
+    .wiki-content.loading { color: var(--text-muted); font-style: italic; }
+    .wiki-placeholder {
+      text-align: center;
+      color: var(--text-muted);
+      padding: 48px 0;
+    }
+    .wiki-placeholder svg { opacity: 0.3; margin-bottom: 12px; }
+    .wiki-placeholder p { font-size: 14px; }
+
+    /* Markdown rendered content */
+    .wiki-body h1 { font-size: 22px; font-weight: 700; margin: 0 0 18px; padding-bottom: 12px; border-bottom: 1px solid var(--border); color: var(--text-primary); }
+    .wiki-body h2 { font-size: 17px; font-weight: 600; margin: 28px 0 12px; color: var(--text-primary); }
+    .wiki-body h3 { font-size: 14px; font-weight: 600; margin: 20px 0 8px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; }
+    .wiki-body p  { margin-bottom: 14px; line-height: 1.7; color: var(--text-primary); }
+    .wiki-body ul, .wiki-body ol { padding-left: 22px; margin-bottom: 14px; }
+    .wiki-body li { margin-bottom: 6px; line-height: 1.6; color: var(--text-primary); }
+    .wiki-body a  { color: var(--accent-hover); }
+    .wiki-body a:hover { text-decoration: underline; }
+    .wiki-body code { background: var(--bg-surface2); padding: 2px 6px; border-radius: 4px; font-size: 12.5px; color: var(--status-prog-txt); }
+    .wiki-body pre  { background: var(--bg-surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px 16px; overflow-x: auto; margin-bottom: 16px; }
+    .wiki-body pre code { background: none; padding: 0; color: var(--text-primary); }
+    .wiki-body blockquote { border-left: 3px solid var(--border-light); padding-left: 16px; margin: 0 0 14px; color: var(--text-secondary); }
+    .wiki-body hr { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+    .wiki-body table { border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 16px; }
+    .wiki-body table th { font-size: 12px; padding: 8px 12px; }
+    .wiki-body table td { font-size: 13px; padding: 8px 12px; }
+    .wiki-body input[type="checkbox"] { accent-color: var(--accent); margin-right: 6px; }
+
+    /* =========================================================
+       Loading skeleton
+       ========================================================= */
+    .skeleton {
+      background: linear-gradient(90deg, var(--bg-surface2) 25%, var(--bg-hover) 50%, var(--bg-surface2) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite;
+      border-radius: 4px;
+      height: 16px;
+    }
+    @keyframes shimmer {
+      0%   { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* =========================================================
+       Responsive
+       ========================================================= */
+    #menu-toggle {
+      display: none;
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 6px 8px;
+      color: var(--text-secondary);
+    }
+    @media (max-width: 768px) {
+      #sidebar { transform: translateX(-100%); }
+      #sidebar.open { transform: translateX(0); box-shadow: var(--shadow-md); }
+      #main-wrap { margin-left: 0; }
+      #menu-toggle { display: flex; align-items: center; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .wiki-layout { flex-direction: column; }
+      .wiki-sidebar { width: 100%; position: static; }
+    }
+    @media (max-width: 480px) {
+      .stats-grid { grid-template-columns: 1fr; }
+      #content { padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ===== SIDEBAR ===== -->
+  <nav id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">S</div>
+      <div>
+        <div class="logo-text">Service Portal</div>
+        <div class="logo-sub">Internal Staff</div>
+      </div>
+    </div>
+
+    <div class="sidebar-nav">
+      <div class="nav-section-label">Navigation</div>
+      <a class="nav-link active" data-page="dashboard" href="#dashboard">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Dashboard
+      </a>
+      <a class="nav-link" data-page="cases" href="#cases">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+        Cases
+      </a>
+      <a class="nav-link" data-page="staff" href="#staff">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+        Staff
+      </a>
+      <a class="nav-link" data-page="wiki" href="#wiki">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+        Wiki
+      </a>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="user-card">
+        <div class="user-avatar" id="sidebar-avatar">
+          <span id="sidebar-initials">?</span>
+        </div>
+        <div class="user-info">
+          <div class="user-name" id="sidebar-name">Loading...</div>
+          <div class="user-email" id="sidebar-email"></div>
+        </div>
+        <button class="logout-btn" id="logout-btn" title="Sign out">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ===== MAIN WRAP ===== -->
+  <div id="main-wrap">
+
+    <!-- Header -->
+    <header id="header">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <button id="menu-toggle" aria-label="Toggle menu">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <span class="header-title" id="page-title">Dashboard</span>
+      </div>
+      <div class="header-actions">
+        <button class="theme-toggle" id="theme-toggle">
+          <svg id="theme-icon" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M21 12.79A9 9 0 1111.21 3a7 7 0 009.79 9.79z"/>
+          </svg>
+          <span id="theme-label">Light</span>
+        </button>
+        <div class="header-avatar" id="header-avatar">
+          <span id="header-initials">?</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Content -->
+    <main id="content">
+
+      <!-- ===== DASHBOARD ===== -->
+      <section class="page active" id="page-dashboard">
+        <div class="page-header">
+          <h2>Dashboard</h2>
+          <p>Overview of service operations and recent activity.</p>
+        </div>
+
+        <div class="stats-grid" id="stats-grid">
+          <div class="stat-card">
+            <div class="stat-label">Open Cases</div>
+            <div class="stat-value" id="stat-open"><div class="skeleton" style="width:48px;height:32px;"></div></div>
+            <div class="stat-icon blue">
+              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </div>
+            <div class="stat-sub">Awaiting assignment</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">In Progress</div>
+            <div class="stat-value" id="stat-inprogress"><div class="skeleton" style="width:48px;height:32px;"></div></div>
+            <div class="stat-icon amber">
+              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+            </div>
+            <div class="stat-sub">Actively being worked</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Resolved</div>
+            <div class="stat-value" id="stat-resolved"><div class="skeleton" style="width:48px;height:32px;"></div></div>
+            <div class="stat-icon green">
+              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div class="stat-sub">Closed this cycle</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Staff Count</div>
+            <div class="stat-value" id="stat-staff"><div class="skeleton" style="width:48px;height:32px;"></div></div>
+            <div class="stat-icon indigo">
+              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+            </div>
+            <div class="stat-sub">Active team members</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="section-title">Recent Activity</div>
+          <ul class="activity-list">
+            <li class="activity-item">
+              <span class="activity-dot dot-blue"></span>
+              <div>
+                <div class="activity-text">SVC-007 opened — SSO login loop for marketing tools</div>
+                <div class="activity-time">Today, 09:14 AM · Alex Rivera</div>
+              </div>
+            </li>
+            <li class="activity-item">
+              <span class="activity-dot dot-blue"></span>
+              <div>
+                <div class="activity-text">SVC-001 opened — Network switch offline in Building A</div>
+                <div class="activity-time">Yesterday, 04:32 PM · Jordan Lee</div>
+              </div>
+            </li>
+            <li class="activity-item">
+              <span class="activity-dot dot-amber"></span>
+              <div>
+                <div class="activity-text">SVC-002 moved to In Progress — Printer queue stuck</div>
+                <div class="activity-time">Yesterday, 02:11 PM · Sam Patel</div>
+              </div>
+            </li>
+            <li class="activity-item">
+              <span class="activity-dot dot-amber"></span>
+              <div>
+                <div class="activity-text">SVC-005 moved to In Progress — Conference room AV</div>
+                <div class="activity-time">2 days ago · Sam Patel</div>
+              </div>
+            </li>
+            <li class="activity-item">
+              <span class="activity-dot dot-green"></span>
+              <div>
+                <div class="activity-text">SVC-003 resolved — VPN access for new contractor</div>
+                <div class="activity-time">2 days ago · Jordan Lee</div>
+              </div>
+            </li>
+            <li class="activity-item">
+              <span class="activity-dot dot-green"></span>
+              <div>
+                <div class="activity-text">SVC-006 resolved — Laptop battery replacement</div>
+                <div class="activity-time">3 days ago · Jordan Lee</div>
+              </div>
+            </li>
+            <li class="activity-item">
+              <span class="activity-dot dot-green"></span>
+              <div>
+                <div class="activity-text">SVC-008 resolved — Onboarding access for Morgan Chen</div>
+                <div class="activity-time">4 days ago · Alex Rivera</div>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ===== CASES ===== -->
+      <section class="page" id="page-cases">
+        <div class="page-header">
+          <h2>Cases</h2>
+          <p>All service cases, filterable by status.</p>
+        </div>
+
+        <div class="filter-tabs">
+          <button class="filter-tab active" data-filter="all">All</button>
+          <button class="filter-tab" data-filter="open">Open</button>
+          <button class="filter-tab" data-filter="inprogress">In Progress</button>
+          <button class="filter-tab" data-filter="resolved">Resolved</button>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Title</th>
+                <th>Status</th>
+                <th>Assigned To</th>
+                <th>Priority</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody id="cases-tbody">
+              <!-- populated by JS -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ===== STAFF ===== -->
+      <section class="page" id="page-staff">
+        <div class="page-header">
+          <h2>Staff</h2>
+          <p>Current team members and their availability.</p>
+        </div>
+        <div class="staff-grid" id="staff-grid">
+          <!-- populated by JS -->
+        </div>
+      </section>
+
+      <!-- ===== WIKI ===== -->
+      <section class="page" id="page-wiki">
+        <div class="page-header">
+          <h2>Knowledge Base</h2>
+          <p>Internal documentation, policies, and guides.</p>
+        </div>
+        <div class="wiki-layout">
+          <aside class="wiki-sidebar">
+            <h3>Articles</h3>
+            <input class="wiki-search" type="search" placeholder="Search articles..." id="wiki-search">
+            <div id="wiki-nav">
+              <!-- populated by JS -->
+            </div>
+          </aside>
+          <div class="wiki-content" id="wiki-content">
+            <div class="wiki-placeholder">
+              <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" display="block" style="margin:0 auto 12px;"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+              <p>Select an article from the sidebar to read it.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<script>
+// =============================================================================
+// Data
+// =============================================================================
+const CASES = [
+  { id: 'SVC-001', title: 'Network switch offline in Building A',    status: 'Open',        assignedTo: 'Jordan Lee',  priority: 'P1', date: '2026-07-08' },
+  { id: 'SVC-002', title: 'Printer queue stuck on Floor 3',          status: 'In Progress',  assignedTo: 'Sam Patel',   priority: 'P3', date: '2026-07-07' },
+  { id: 'SVC-003', title: 'VPN access request for new contractor',   status: 'Resolved',    assignedTo: 'Jordan Lee',  priority: 'P4', date: '2026-07-06' },
+  { id: 'SVC-004', title: 'Email delivery delays for ops team',      status: 'Open',        assignedTo: 'Alex Rivera', priority: 'P2', date: '2026-07-08' },
+  { id: 'SVC-005', title: 'Conference room AV system broken',        status: 'In Progress',  assignedTo: 'Sam Patel',   priority: 'P3', date: '2026-07-05' },
+  { id: 'SVC-006', title: 'Laptop battery replacement request',      status: 'Resolved',    assignedTo: 'Jordan Lee',  priority: 'P4', date: '2026-07-04' },
+  { id: 'SVC-007', title: 'SSO login loop for marketing tools',      status: 'Open',        assignedTo: 'Alex Rivera', priority: 'P2', date: '2026-07-09' },
+  { id: 'SVC-008', title: 'Onboarding access for Morgan Chen',       status: 'Resolved',    assignedTo: 'Alex Rivera', priority: 'P4', date: '2026-07-03' },
+];
+
+const STAFF = [
+  { name: 'Alex Rivera',  role: 'Service Lead',      dept: 'Operations', email: 'alex@example.com',   status: 'Available' },
+  { name: 'Jordan Lee',   role: 'Support Engineer',  dept: 'Technical',  email: 'jordan@example.com', status: 'Busy'      },
+  { name: 'Sam Patel',    role: 'Field Technician',  dept: 'Field Ops',  email: 'sam@example.com',    status: 'Available' },
+  { name: 'Morgan Chen',  role: 'Analyst',           dept: 'Operations', email: 'morgan@example.com', status: 'OOO'       },
+];
+
+const WIKI_ARTICLES = [
+  { slug: 'index',             title: 'Knowledge Base Index',   file: 'index.md'             },
+  { slug: 'onboarding',        title: 'Onboarding Guide',       file: 'onboarding.md'        },
+  { slug: 'escalation-policy', title: 'Escalation Policy',      file: 'escalation-policy.md' },
+];
+
+const PAGE_TITLES = {
+  dashboard: 'Dashboard',
+  cases:     'Cases',
+  staff:     'Staff',
+  wiki:      'Wiki',
+};
+
+// =============================================================================
+// Theme
+// =============================================================================
+const html = document.documentElement;
+const themeToggleBtn = document.getElementById('theme-toggle');
+const themeIcon      = document.getElementById('theme-icon');
+const themeLabel     = document.getElementById('theme-label');
+
+const MOON_SVG = `<path d="M21 12.79A9 9 0 1111.21 3a7 7 0 009.79 9.79z"/>`;
+const SUN_SVG  = `<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>`;
+
+function applyTheme(theme) {
+  html.setAttribute('data-theme', theme);
+  if (theme === 'dark') {
+    themeIcon.innerHTML = MOON_SVG;
+    themeLabel.textContent = 'Light';
+  } else {
+    themeIcon.innerHTML = SUN_SVG;
+    themeLabel.textContent = 'Dark';
+  }
+}
+
+function loadTheme() {
+  const saved = localStorage.getItem('sp-theme') || 'dark';
+  applyTheme(saved);
+}
+
+themeToggleBtn.addEventListener('click', () => {
+  const current = html.getAttribute('data-theme');
+  const next = current === 'dark' ? 'light' : 'dark';
+  localStorage.setItem('sp-theme', next);
+  applyTheme(next);
+});
+
+loadTheme();
+
+// =============================================================================
+// User info
+// =============================================================================
+function initials(name) {
+  if (!name) return '?';
+  const parts = name.trim().split(' ');
+  return (parts[0][0] + (parts[1] ? parts[1][0] : '')).toUpperCase();
+}
+
+function setUserUI(user) {
+  document.getElementById('sidebar-name').textContent  = user.name || user.email;
+  document.getElementById('sidebar-email').textContent = user.email || '';
+  document.getElementById('sidebar-initials').textContent  = initials(user.name || user.email);
+  document.getElementById('header-initials').textContent   = initials(user.name || user.email);
+
+  if (user.picture) {
+    const sAvatar = document.getElementById('sidebar-avatar');
+    const hAvatar = document.getElementById('header-avatar');
+    sAvatar.innerHTML = `<img src="${user.picture}" alt="${user.name}">`;
+    hAvatar.innerHTML = `<img src="${user.picture}" alt="${user.name}">`;
+  }
+}
+
+async function loadUser() {
+  try {
+    const res = await fetch('/api/me');
+    if (res.status === 401) {
+      window.location.href = '/login';
+      return;
+    }
+    const user = await res.json();
+    setUserUI(user);
+  } catch (e) {
+    console.error('Failed to load user', e);
+  }
+}
+
+document.getElementById('logout-btn').addEventListener('click', () => {
+  window.location.href = '/logout';
+});
+
+// =============================================================================
+// Stats
+// =============================================================================
+async function loadStats() {
+  try {
+    const res = await fetch('/api/stats');
+    if (!res.ok) return;
+    const stats = await res.json();
+    document.getElementById('stat-open').textContent       = stats.open;
+    document.getElementById('stat-inprogress').textContent = stats.inProgress;
+    document.getElementById('stat-resolved').textContent   = stats.resolved;
+    document.getElementById('stat-staff').textContent      = stats.totalStaff;
+  } catch (e) {
+    console.error('Failed to load stats', e);
+  }
+}
+
+// =============================================================================
+// Cases
+// =============================================================================
+function statusBadgeClass(status) {
+  if (status === 'Open')        return 'badge badge-open';
+  if (status === 'In Progress') return 'badge badge-prog';
+  if (status === 'Resolved')    return 'badge badge-done';
+  return 'badge';
+}
+
+function priorityBadgeClass(p) {
+  const map = { P1: 'badge badge-p1', P2: 'badge badge-p2', P3: 'badge badge-p3', P4: 'badge badge-p4' };
+  return map[p] || 'badge';
+}
+
+function renderCases(filter) {
+  const tbody = document.getElementById('cases-tbody');
+  const filterMap = { all: null, open: 'Open', inprogress: 'In Progress', resolved: 'Resolved' };
+  const statusFilter = filterMap[filter];
+  const rows = CASES.filter(c => !statusFilter || c.status === statusFilter);
+
+  if (rows.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:32px;">No cases found.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = rows.map(c => `
+    <tr>
+      <td class="case-id">${c.id}</td>
+      <td>${c.title}</td>
+      <td><span class="${statusBadgeClass(c.status)}">${c.status}</span></td>
+      <td>${c.assignedTo}</td>
+      <td><span class="${priorityBadgeClass(c.priority)}">${c.priority}</span></td>
+      <td style="color:var(--text-secondary)">${c.date}</td>
+    </tr>
+  `).join('');
+}
+
+function initCases() {
+  renderCases('all');
+  document.querySelectorAll('.filter-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderCases(btn.dataset.filter);
+    });
+  });
+}
+
+// =============================================================================
+// Staff
+// =============================================================================
+function staffStatusBadge(status) {
+  if (status === 'Available') return 'badge badge-avail';
+  if (status === 'Busy')      return 'badge badge-busy';
+  return 'badge badge-ooo';
+}
+
+function renderStaff() {
+  const grid = document.getElementById('staff-grid');
+  grid.innerHTML = STAFF.map(s => `
+    <div class="staff-card">
+      <div class="staff-card-header">
+        <div class="staff-avatar">${initials(s.name)}</div>
+        <div>
+          <div class="staff-name">${s.name}</div>
+          <div class="staff-role">${s.role}</div>
+        </div>
+      </div>
+      <div class="staff-meta">
+        <span class="staff-dept">${s.dept}</span>
+        <span class="${staffStatusBadge(s.status)}">${s.status}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+// =============================================================================
+// Wiki
+// =============================================================================
+let wikiCache = {};
+let activeWikiSlug = null;
+
+function renderWikiNav(query) {
+  const nav = document.getElementById('wiki-nav');
+  const q = (query || '').toLowerCase();
+  const filtered = q
+    ? WIKI_ARTICLES.filter(a => a.title.toLowerCase().includes(q))
+    : WIKI_ARTICLES;
+
+  nav.innerHTML = filtered.map(a => `
+    <button class="wiki-nav-item${activeWikiSlug === a.slug ? ' active' : ''}"
+            data-slug="${a.slug}" data-file="${a.file}">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      ${a.title}
+    </button>
+  `).join('');
+
+  nav.querySelectorAll('.wiki-nav-item').forEach(btn => {
+    btn.addEventListener('click', () => loadWikiArticle(btn.dataset.slug, btn.dataset.file));
+  });
+}
+
+async function loadWikiArticle(slug, file) {
+  activeWikiSlug = slug;
+  renderWikiNav(document.getElementById('wiki-search').value);
+
+  const contentEl = document.getElementById('wiki-content');
+  if (wikiCache[slug]) {
+    contentEl.innerHTML = `<div class="wiki-body">${wikiCache[slug]}</div>`;
+    return;
+  }
+
+  contentEl.classList.add('loading');
+  contentEl.innerHTML = '<p>Loading article...</p>';
+
+  try {
+    const res = await fetch(`/api/wiki/${file}`);
+    if (!res.ok) {
+      contentEl.classList.remove('loading');
+      contentEl.innerHTML = `<p style="color:var(--p1-txt)">Could not load article (${res.status}).</p>`;
+      return;
+    }
+    const md = await res.text();
+    const html = marked.parse(md);
+    wikiCache[slug] = html;
+    contentEl.classList.remove('loading');
+    contentEl.innerHTML = `<div class="wiki-body">${html}</div>`;
+  } catch (e) {
+    contentEl.classList.remove('loading');
+    contentEl.innerHTML = `<p style="color:var(--p1-txt)">Failed to fetch article: ${e.message}</p>`;
+  }
+}
+
+function initWiki() {
+  renderWikiNav('');
+  document.getElementById('wiki-search').addEventListener('input', e => {
+    renderWikiNav(e.target.value);
+  });
+}
+
+// =============================================================================
+// SPA routing
+// =============================================================================
+const pages = ['dashboard', 'cases', 'staff', 'wiki'];
+const pageTitle = document.getElementById('page-title');
+
+function navigateTo(pageId) {
+  if (!pages.includes(pageId)) pageId = 'dashboard';
+
+  // Toggle visible page
+  document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+  document.getElementById(`page-${pageId}`).classList.add('active');
+
+  // Update nav links
+  document.querySelectorAll('.nav-link').forEach(link => {
+    link.classList.toggle('active', link.dataset.page === pageId);
+  });
+
+  // Update header title
+  pageTitle.textContent = PAGE_TITLES[pageId] || '';
+
+  // Close mobile sidebar
+  document.getElementById('sidebar').classList.remove('open');
+}
+
+function handleHashChange() {
+  const hash = window.location.hash.replace('#', '') || 'dashboard';
+  navigateTo(hash);
+}
+
+document.querySelectorAll('.nav-link').forEach(link => {
+  link.addEventListener('click', e => {
+    e.preventDefault();
+    const page = link.dataset.page;
+    window.location.hash = page;
+  });
+});
+
+window.addEventListener('hashchange', handleHashChange);
+
+// Mobile menu toggle
+document.getElementById('menu-toggle').addEventListener('click', () => {
+  document.getElementById('sidebar').classList.toggle('open');
+});
+
+// Close sidebar when clicking outside on mobile
+document.getElementById('main-wrap').addEventListener('click', () => {
+  document.getElementById('sidebar').classList.remove('open');
+});
+
+// =============================================================================
+// Init
+// =============================================================================
+(async function init() {
+  await loadUser();
+  await loadStats();
+  initCases();
+  renderStaff();
+  initWiki();
+  handleHashChange();
+})();
+</script>
+</body>
+</html>

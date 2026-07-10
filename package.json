@@ -1,14 +1,14 @@
 {
   "name": "service-portal",
   "version": "1.0.0",
-  "description": "Internal staff service org portal",
-  "private": true,
+  "type": "module",
   "scripts": {
-    "dev:client": "npm run dev --prefix client",
-    "dev:server": "node server/index.js",
-    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\""
+    "start": "node server.js",
+    "dev": "node server.js"
   },
-  "devDependencies": {
-    "concurrently": "^8.2.2"
+  "dependencies": {
+    "marked": "^15.0.0",
+    "@google-cloud/firestore": "^7.0.0",
+    "@google-cloud/storage": "^7.0.0"
   }
 }

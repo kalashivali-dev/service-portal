@@ -1,0 +1,9 @@
+{
+  "staff": [
+    { "name": "Alex Rivera", "role": "Service Lead", "dept": "Operations", "email": "alex@example.com", "status": "Available" },
+    { "name": "Jordan Lee", "role": "Support Engineer", "dept": "Technical", "email": "jordan@example.com", "status": "Busy" },
+    { "name": "Sam Patel", "role": "Field Technician", "dept": "Field Ops", "email": "sam@example.com", "status": "Available" },
+    { "name": "Morgan Chen", "role": "Analyst", "dept": "Operations", "email": "morgan@example.com", "status": "OOO" }
+  ],
+  "allowedDomain": "example.com"
+}
