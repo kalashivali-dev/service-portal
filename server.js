@@ -274,12 +274,9 @@ function handleLogin(req, res) {
       gap: 12px;
     }
     .logo-icon {
-      width: 44px; height: 44px;
-      background: linear-gradient(135deg, #1a6fc4, #0ea5e9);
-      border-radius: 10px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 18px; font-weight: 800; color: #fff;
-      letter-spacing: -0.5px;
+      height: 48px;
+      width: auto;
+      display: block;
       flex-shrink: 0;
     }
     .logo-text {
@@ -324,11 +321,9 @@ function handleLogin(req, res) {
       display: flex; align-items: center; justify-content: center; gap: 8px;
     }
     .footer-logo-icon {
-      width: 18px; height: 18px;
-      background: linear-gradient(135deg, #1a6fc4, #0ea5e9);
-      border-radius: 4px;
-      display: inline-flex; align-items: center; justify-content: center;
-      font-size: 9px; font-weight: 800; color: #fff;
+      height: 16px;
+      width: auto;
+      opacity: 0.7;
     }
   </style>
 </head>
@@ -336,7 +331,7 @@ function handleLogin(req, res) {
   <div class="login-container">
     <main>
       <div class="logo">
-        <div class="logo-icon">SI</div>
+        <img class="logo-icon" src="/sycamore-logo.jpg" alt="Sycamore Informatics">
         <div class="logo-text">
           <div class="logo-name">Sycamore Informatics</div>
           <div class="logo-sub">Service Operations Portal</div>
@@ -354,7 +349,7 @@ function handleLogin(req, res) {
   <footer>
     <div class="footer-inner">
       <span>Powered by</span>
-      <div class="footer-logo-icon">SI</div>
+      <img class="footer-logo-icon" src="/sycamore-logo.jpg" alt="Sycamore Informatics">
       <span>Sycamore Informatics</span>
     </div>
   </footer>

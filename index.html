@@ -128,13 +128,11 @@
       gap: 12px;
     }
     .sycamore-logo-icon {
-      width: 36px; height: 36px;
-      background: rgba(255,255,255,0.12);
-      border-radius: 8px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 18px; font-weight: 800; color: #fff;
-      border: 1px solid rgba(255,255,255,0.2);
+      height: 32px;
+      width: auto;
+      display: block;
       flex-shrink: 0;
+      filter: brightness(0) invert(1);
     }
     .sycamore-logo-text {
       font-size: 16px;
@@ -305,11 +303,9 @@
       border-bottom: 1px solid var(--border);
     }
     .sidebar-logo .logo-icon {
-      width: 34px; height: 34px;
-      background: linear-gradient(135deg, var(--accent), #8b5cf6);
-      border-radius: 8px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 16px; font-weight: 700; color: #fff;
+      height: 28px;
+      width: auto;
+      display: block;
       flex-shrink: 0;
     }
     .sidebar-logo .logo-text {
@@ -817,7 +813,7 @@
 <!-- ===== SYCAMORE TOP HEADER ===== -->
 <header id="sycamore-header">
   <div class="sycamore-logo">
-    <div class="sycamore-logo-icon">SI</div>
+    <img class="sycamore-logo-icon" src="/sycamore-logo.jpg" alt="Sycamore Informatics">
     <div>
       <div class="sycamore-logo-text">Sycamore Informatics
         <span class="sycamore-logo-subtitle">Service Operations Portal</span>
@@ -834,7 +830,7 @@
   <!-- ===== SIDEBAR ===== -->
   <nav id="sidebar">
     <div class="sidebar-logo">
-      <div class="logo-icon">SO</div>
+      <img class="logo-icon" src="/sycamore-logo.jpg" alt="Sycamore Informatics">
       <div>
         <div class="logo-text">Service Portal</div>
         <div class="logo-sub">Internal Staff</div>
