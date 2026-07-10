@@ -3,8 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Service Portal</title>
+  <title>Service Portal – Sycamore Informatics</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <style>
@@ -90,6 +91,170 @@
       --shadow-md: 0 4px 16px rgba(0,0,0,0.1);
     }
 
+    /* Sycamore header colours (same as pm-wiki-portal) */
+    :root {
+      --sycamore-header-primary:   #0D1B2A;
+      --sycamore-header-secondary: #1B2838;
+      --sycamore-accent-primary:   #0066CC;
+      --sycamore-accent-secondary: #0088E8;
+      --sycamore-accent-tertiary:  #33A3FF;
+    }
+
+    /* =========================================================
+       Sycamore Top Header Bar
+       ========================================================= */
+    #sycamore-header {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 200;
+      height: 64px;
+      background: linear-gradient(180deg, var(--sycamore-header-primary) 0%, var(--sycamore-header-secondary) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 32px;
+      box-shadow: 0 2px 20px rgba(0,0,0,0.2);
+    }
+    #sycamore-header::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--sycamore-accent-primary) 0%, var(--sycamore-accent-secondary) 50%, var(--sycamore-accent-tertiary) 100%);
+    }
+    .sycamore-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .sycamore-logo-icon {
+      width: 36px; height: 36px;
+      background: rgba(255,255,255,0.12);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; font-weight: 800; color: #fff;
+      border: 1px solid rgba(255,255,255,0.2);
+      flex-shrink: 0;
+    }
+    .sycamore-logo-text {
+      font-size: 16px;
+      font-weight: 700;
+      color: #FFFFFF;
+      line-height: 1.2;
+    }
+    .sycamore-logo-subtitle {
+      display: block;
+      font-size: 10px;
+      font-weight: 400;
+      color: rgba(255,255,255,0.55);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-top: 2px;
+    }
+    .sycamore-header-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .sycamore-header-pill {
+      font-size: 12px;
+      color: rgba(255,255,255,0.65);
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 20px;
+      padding: 5px 12px;
+    }
+    .sycamore-header-pill strong { color: var(--sycamore-accent-tertiary); }
+
+    /* Sycamore Footer */
+    #sycamore-footer {
+      padding: 20px 32px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg-surface);
+      margin-left: var(--sidebar-w);
+    }
+    .footer-text { font-size: 12px; color: var(--text-muted); }
+    .footer-links { display: flex; gap: 20px; }
+    .footer-links a {
+      font-size: 12px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: color var(--transition);
+    }
+    .footer-links a:hover { color: var(--sycamore-accent-secondary); }
+
+    /* Welcome hero on dashboard */
+    .welcome-hero {
+      background: linear-gradient(135deg, var(--sycamore-header-primary) 0%, #1a3a5c 100%);
+      border-radius: var(--radius);
+      padding: 32px 36px;
+      margin-bottom: 28px;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(0,102,204,0.2);
+    }
+    .welcome-hero::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--sycamore-accent-primary), var(--sycamore-accent-secondary), var(--sycamore-accent-tertiary));
+    }
+    .welcome-hero::after {
+      content: 'SI';
+      position: absolute;
+      right: 32px; top: 50%;
+      transform: translateY(-50%);
+      font-size: 96px;
+      font-weight: 800;
+      color: rgba(255,255,255,0.04);
+      line-height: 1;
+      pointer-events: none;
+      user-select: none;
+    }
+    .welcome-greeting {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--sycamore-accent-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 8px;
+    }
+    .welcome-title {
+      font-size: 26px;
+      font-weight: 700;
+      color: #FFFFFF;
+      line-height: 1.2;
+      margin-bottom: 8px;
+    }
+    .welcome-sub {
+      font-size: 14px;
+      color: rgba(255,255,255,0.6);
+      max-width: 480px;
+    }
+    .welcome-badges {
+      display: flex;
+      gap: 10px;
+      margin-top: 18px;
+      flex-wrap: wrap;
+    }
+    .welcome-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.75);
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 20px;
+      padding: 5px 12px;
+    }
+    .welcome-badge svg { opacity: 0.8; }
+
     /* =========================================================
        Reset & Base
        ========================================================= */
@@ -126,8 +291,8 @@
       display: flex;
       flex-direction: column;
       position: fixed;
-      top: 0; left: 0;
-      height: 100vh;
+      top: 64px; left: 0;
+      height: calc(100vh - 64px);
       z-index: 100;
       transition: transform var(--transition);
     }
@@ -239,6 +404,7 @@
        ========================================================= */
     #main-wrap {
       margin-left: var(--sidebar-w);
+      margin-top: 64px;
       flex: 1;
       display: flex;
       flex-direction: column;
@@ -628,24 +794,45 @@
       #sidebar { transform: translateX(-100%); }
       #sidebar.open { transform: translateX(0); box-shadow: var(--shadow-md); }
       #main-wrap { margin-left: 0; }
+      #sycamore-footer { margin-left: 0; }
       #menu-toggle { display: flex; align-items: center; }
       .stats-grid { grid-template-columns: repeat(2, 1fr); }
       .wiki-layout { flex-direction: column; }
       .wiki-sidebar { width: 100%; position: static; }
+      #sycamore-header { padding: 0 16px; }
+      .sycamore-header-pill { display: none; }
     }
     @media (max-width: 480px) {
       .stats-grid { grid-template-columns: 1fr; }
       #content { padding: 16px; }
+      .welcome-hero { padding: 24px 20px; }
+      .welcome-title { font-size: 20px; }
     }
   </style>
 </head>
 <body>
+
+<!-- ===== SYCAMORE TOP HEADER ===== -->
+<header id="sycamore-header">
+  <div class="sycamore-logo">
+    <div class="sycamore-logo-icon">SI</div>
+    <div>
+      <div class="sycamore-logo-text">Sycamore Informatics
+        <span class="sycamore-logo-subtitle">Service Operations Portal</span>
+      </div>
+    </div>
+  </div>
+  <div class="sycamore-header-right">
+    <div class="sycamore-header-pill">Last updated <strong id="header-last-updated">—</strong></div>
+  </div>
+</header>
+
 <div id="app">
 
   <!-- ===== SIDEBAR ===== -->
   <nav id="sidebar">
     <div class="sidebar-logo">
-      <div class="logo-icon">S</div>
+      <div class="logo-icon">SO</div>
       <div>
         <div class="logo-text">Service Portal</div>
         <div class="logo-sub">Internal Staff</div>
@@ -717,9 +904,35 @@
 
       <!-- ===== DASHBOARD ===== -->
       <section class="page active" id="page-dashboard">
+
+        <!-- Welcome Hero -->
+        <div class="welcome-hero">
+          <div class="welcome-greeting">Sycamore Informatics · Service Org</div>
+          <div class="welcome-title">Welcome to the Services Dashboard</div>
+          <div class="welcome-sub">Your central hub for service operations — track cases, manage staff, and access the team knowledge base.</div>
+          <div class="welcome-badges">
+            <div class="welcome-badge">
+              <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+              Live Operations
+            </div>
+            <div class="welcome-badge">
+              <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              Real-time Updates
+            </div>
+            <div class="welcome-badge">
+              <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+              Staff Management
+            </div>
+            <div class="welcome-badge">
+              <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+              Knowledge Wiki
+            </div>
+          </div>
+        </div>
+
         <div class="page-header">
-          <h2>Dashboard</h2>
-          <p>Overview of service operations and recent activity.</p>
+          <h2>Operations Overview</h2>
+          <p>Real-time summary of service cases and team activity.</p>
         </div>
 
         <div class="stats-grid" id="stats-grid">
@@ -883,6 +1096,16 @@
     </main>
   </div>
 </div>
+
+<!-- ===== SYCAMORE FOOTER ===== -->
+<footer id="sycamore-footer">
+  <div class="footer-text">© 2026 Sycamore Informatics · Service Operations Team</div>
+  <div class="footer-links">
+    <a href="#dashboard">Dashboard</a>
+    <a href="#cases">Cases</a>
+    <a href="#wiki">Wiki</a>
+  </div>
+</footer>
 
 <script>
 // =============================================================================
@@ -1214,6 +1437,12 @@ document.getElementById('main-wrap').addEventListener('click', () => {
   renderStaff();
   initWiki();
   handleHashChange();
+  // Set header timestamp
+  const el = document.getElementById('header-last-updated');
+  if (el) {
+    const now = new Date();
+    el.textContent = now.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  }
 })();
 </script>
 </body>
