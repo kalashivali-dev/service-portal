@@ -1,0 +1,14 @@
+{
+  "name": "service-portal",
+  "version": "1.0.0",
+  "description": "Internal staff service org portal",
+  "private": true,
+  "scripts": {
+    "dev:client": "npm run dev --prefix client",
+    "dev:server": "node server/index.js",
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

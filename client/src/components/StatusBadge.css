@@ -1,0 +1,24 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.badge--open {
+  background: var(--color-open-bg);
+  color: var(--color-open);
+}
+
+.badge--in-progress {
+  background: var(--color-inprogress-bg);
+  color: var(--color-inprogress);
+}
+
+.badge--resolved {
+  background: var(--color-resolved-bg);
+  color: var(--color-resolved);
+}
