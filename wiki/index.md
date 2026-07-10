@@ -1,30 +1,28 @@
-# Knowledge Base Index
+# Service Portal — Knowledge Base
 
-Welcome to the Service Org Knowledge Base. Browse the articles below to find guidance, policies, and procedures.
-
----
-
-## Available Articles
-
-### [Onboarding Guide](onboarding.md)
-Step-by-step instructions for new staff members joining the Service Org. Covers account setup, tool access, introductory training, and first-week checklist.
-
-### [Escalation Policy](escalation-policy.md)
-Defines the escalation tiers used when a service case cannot be resolved at the current support level. Includes contact lists, SLA thresholds, and communication templates.
+Welcome to the internal wiki for the Service Org Portal. Use the search bar or browse categories below.
 
 ---
 
-## Quick Reference
+## Services
+| Article | Description |
+|---------|-------------|
+| [Field Operations](services/field-ops.md) | On-site service delivery, dispatch, and maintenance |
+| [Technical Support](services/technical-support.md) | Tier 1/2 issue resolution and escalation |
 
-| Topic | Article |
-|-------|---------|
-| New hire setup | Onboarding Guide |
-| Who to contact for P1 issues | Escalation Policy |
-| Tool access requests | Onboarding Guide |
-| SLA definitions | Escalation Policy |
+## People
+| Article | Description |
+|---------|-------------|
+| [Alex Rivera](people/alex-rivera.md) | Service Lead, Operations |
 
----
+## Trackers
+| Article | Description |
+|---------|-------------|
+| [Action Items](trackers/action-items.md) | Open and in-progress action items across all services |
+| [Risks](trackers/risks.md) | Current risks with likelihood, impact, and mitigation |
 
-## Contributing
-
-To add or update an article, submit a pull request to the `wiki/` directory of the service-portal repository. All changes are reviewed by the Service Lead before merging.
+## General
+| Article | Description |
+|---------|-------------|
+| [Onboarding](onboarding.md) | New staff onboarding checklist and steps |
+| [Escalation Policy](escalation-policy.md) | Escalation tiers, contacts, and SLAs |

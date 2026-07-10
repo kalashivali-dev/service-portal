@@ -1,0 +1,75 @@
+{
+  "services": [
+    {
+      "id": "field-ops",
+      "name": "Field Operations",
+      "description": "On-site service delivery and field technician dispatch",
+      "owner": "alex-rivera",
+      "status": "active"
+    },
+    {
+      "id": "technical-support",
+      "name": "Technical Support",
+      "description": "Tier 1 and Tier 2 technical issue resolution",
+      "owner": "jordan-lee",
+      "status": "active"
+    },
+    {
+      "id": "customer-success",
+      "name": "Customer Success",
+      "description": "Customer onboarding, retention, and satisfaction",
+      "owner": "sam-patel",
+      "status": "active"
+    },
+    {
+      "id": "operations-analytics",
+      "name": "Operations Analytics",
+      "description": "Service metrics, reporting, and continuous improvement",
+      "owner": "morgan-chen",
+      "status": "active"
+    }
+  ],
+  "staff": [
+    {
+      "id": "alex-rivera",
+      "name": "Alex Rivera",
+      "role": "Service Lead",
+      "dept": "Operations",
+      "email": "alex@example.com",
+      "status": "Available",
+      "services": ["field-ops"]
+    },
+    {
+      "id": "jordan-lee",
+      "name": "Jordan Lee",
+      "role": "Support Engineer",
+      "dept": "Technical",
+      "email": "jordan@example.com",
+      "status": "Busy",
+      "services": ["technical-support"]
+    },
+    {
+      "id": "sam-patel",
+      "name": "Sam Patel",
+      "role": "Field Technician",
+      "dept": "Field Ops",
+      "email": "sam@example.com",
+      "status": "Available",
+      "services": ["field-ops", "customer-success"]
+    },
+    {
+      "id": "morgan-chen",
+      "name": "Morgan Chen",
+      "role": "Analyst",
+      "dept": "Operations",
+      "email": "morgan@example.com",
+      "status": "OOO",
+      "services": ["operations-analytics"]
+    }
+  ],
+  "officeHours": [
+    { "serviceId": "field-ops", "day": "Monday", "time": "9:00 AM", "timezone": "EST" },
+    { "serviceId": "technical-support", "day": "Wednesday", "time": "2:00 PM", "timezone": "EST" },
+    { "serviceId": "customer-success", "day": "Friday", "time": "11:00 AM", "timezone": "EST" }
+  ]
+}
