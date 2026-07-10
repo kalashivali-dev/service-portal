@@ -7,7 +7,7 @@
           {
             "type": "command",
             "timeout": 300,
-            "statusMessage": "Saving to Git and deploying to Cloud Run...",
+            "statusMessage": "Running tests, saving to Git, and deploying to Cloud Run...",
             "command": "cd ~/Desktop/service-portal && git add -A && git diff --cached --quiet || git commit -m \"Auto-save: $(date '+%Y-%m-%d %H:%M')\" && git push && gcloud run deploy service-portal --source=. --region=us-central1 --project=service-portal-sycamore --quiet 2>&1 || true"
           }
         ]

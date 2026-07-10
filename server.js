@@ -589,20 +589,32 @@ async function requestHandler(req, res) {
 }
 
 // ---------------------------------------------------------------------------
-// Start server
+// Exports for testing
 // ---------------------------------------------------------------------------
-const server = http.createServer(requestHandler);
+export { requestHandler };
 
-server.listen(PORT, () => {
-  console.log(`Service Portal running on http://localhost:${PORT}`);
-  console.log(`Allowed domain: ${config.allowedDomain || ALLOWED_DOMAIN}`);
-  console.log(`OAuth redirect: ${OAUTH_REDIRECT_URI}`);
-  if (!GOOGLE_CLIENT_ID) {
-    console.warn('Warning: GOOGLE_CLIENT_ID is not set. OAuth will not work.');
-  }
-});
+export function createTestSession(user) {
+  return createSession(user);
+}
 
-server.on('error', (err) => {
-  console.error('Server error:', err);
-  process.exit(1);
-});
+// ---------------------------------------------------------------------------
+// Start server (only when run directly, not imported by tests)
+// ---------------------------------------------------------------------------
+const isMain = process.argv[1] === fileURLToPath(import.meta.url);
+if (isMain) {
+  const server = http.createServer(requestHandler);
+
+  server.listen(PORT, () => {
+    console.log(`Service Portal running on http://localhost:${PORT}`);
+    console.log(`Allowed domain: ${config.allowedDomain || ALLOWED_DOMAIN}`);
+    console.log(`OAuth redirect: ${OAUTH_REDIRECT_URI}`);
+    if (!GOOGLE_CLIENT_ID) {
+      console.warn('Warning: GOOGLE_CLIENT_ID is not set. OAuth will not work.');
+    }
+  });
+
+  server.on('error', (err) => {
+    console.error('Server error:', err);
+    process.exit(1);
+  });
+}
