@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import crypto from 'node:crypto';
+import { google } from 'googleapis';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -25,6 +26,10 @@ const OAUTH_USERINFO_URL = 'https://www.googleapis.com/oauth2/v3/userinfo';
 const OAUTH_SCOPES = 'openid email profile';
 const SESSION_COOKIE_NAME = 'svc_session';
 const SESSION_TTL_MS = 8 * 60 * 60 * 1000; // 8 hours
+
+// Google Drive configuration
+const DRIVE_FOLDER_ID = '1E9SrCGqd-YeeRhcWDrun2Mspgx3xM_66';
+const DRIVE_SCOPES = ['https://www.googleapis.com/auth/drive.readonly'];
 
 // ---------------------------------------------------------------------------
 // In-memory session store
@@ -67,6 +72,139 @@ function validateOAuthState(state) {
   const expiry = oauthStates.get(state);
   oauthStates.delete(state);
   return expiry && expiry > Date.now();
+}
+
+// ---------------------------------------------------------------------------
+// Google Drive API helpers
+// ---------------------------------------------------------------------------
+let driveAuth = null;
+
+async function getDriveAuth() {
+  if (driveAuth) return driveAuth;
+
+  try {
+    // Use Application Default Credentials (ADC) in Cloud Run
+    driveAuth = new google.auth.GoogleAuth({
+      scopes: DRIVE_SCOPES,
+    });
+    return driveAuth;
+  } catch (error) {
+    console.error('Failed to initialize Google Drive auth:', error);
+    throw error;
+  }
+}
+
+async function getDriveService() {
+  const auth = await getDriveAuth();
+  const authClient = await auth.getClient();
+  return google.drive({ version: 'v3', auth: authClient });
+}
+
+// Customer data cache
+let customerDataCache = null;
+let lastCacheUpdate = 0;
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+async function getCustomerDataFromDrive() {
+  const now = Date.now();
+  if (customerDataCache && (now - lastCacheUpdate) < CACHE_TTL) {
+    return customerDataCache;
+  }
+
+  try {
+    const drive = await getDriveService();
+
+    // List all PowerPoint files in the folder
+    const filesResponse = await drive.files.list({
+      q: `'${DRIVE_FOLDER_ID}' in parents and (mimeType='application/vnd.ms-powerpoint' or mimeType='application/vnd.openxmlformats-officedocument.presentationml.presentation')`,
+      fields: 'files(id, name, createdTime, modifiedTime)',
+      orderBy: 'createdTime desc'
+    });
+
+    const files = filesResponse.data.files || [];
+    const customerData = {};
+
+    // Process each PowerPoint file
+    for (const file of files) {
+      try {
+        // Extract date/week info from filename if possible
+        const dateMatch = file.name.match(/(\d{4}-\d{2}-\d{2})|(\d{1,2}[-\/]\d{1,2}[-\/]\d{2,4})|Week\s*(\d+)/i);
+
+        const customerInfo = {
+          fileId: file.id,
+          fileName: file.name,
+          createdTime: file.createdTime,
+          modifiedTime: file.modifiedTime,
+          week: dateMatch ? (dateMatch[3] || 'Unknown') : 'Unknown',
+          // For now, we'll store basic info - in a real implementation you'd extract slide content
+          details: await getFileMetadata(drive, file)
+        };
+
+        // Try to extract customer names from filename or you could map based on patterns
+        const customers = extractCustomerNamesFromFileName(file.name);
+
+        customers.forEach(customer => {
+          if (!customerData[customer]) {
+            customerData[customer] = [];
+          }
+          customerData[customer].push(customerInfo);
+        });
+
+      } catch (error) {
+        console.warn(`Error processing file ${file.name}:`, error.message);
+      }
+    }
+
+    customerDataCache = customerData;
+    lastCacheUpdate = now;
+    return customerData;
+
+  } catch (error) {
+    console.error('Error fetching customer data from Drive:', error);
+    throw error;
+  }
+}
+
+async function getFileMetadata(drive, file) {
+  try {
+    const response = await drive.files.get({
+      fileId: file.id,
+      fields: 'description, properties, webViewLink'
+    });
+
+    return {
+      description: response.data.description || 'No description available',
+      webViewLink: response.data.webViewLink,
+      properties: response.data.properties || {}
+    };
+  } catch (error) {
+    console.warn(`Could not get metadata for ${file.name}:`, error.message);
+    return {
+      description: 'Metadata not available',
+      webViewLink: '#',
+      properties: {}
+    };
+  }
+}
+
+function extractCustomerNamesFromFileName(fileName) {
+  // List of known customers - you can expand this based on your needs
+  const knownCustomers = ['AbbVie', 'Alcon', 'Ascendis', 'BMS', 'Otsuka', 'PMI', 'Zealand'];
+
+  const foundCustomers = [];
+
+  knownCustomers.forEach(customer => {
+    if (fileName.toLowerCase().includes(customer.toLowerCase())) {
+      foundCustomers.push(customer);
+    }
+  });
+
+  // If no specific customers found, return all (assuming it's a general file)
+  if (foundCustomers.length === 0) {
+    return knownCustomers;
+  }
+
+  return foundCustomers;
 }
 
 // ---------------------------------------------------------------------------
@@ -512,6 +650,55 @@ function handleApiWiki(req, res, wikiPath) {
   }
 }
 
+// GET /api/customers — get all customer data
+async function handleApiCustomers(req, res) {
+  const auth = resolveUser(req);
+  if (!auth) return sendJSON(res, 401, { error: 'Unauthorized' });
+
+  try {
+    const customerData = await getCustomerDataFromDrive();
+    const customers = Object.keys(customerData).map(name => ({
+      name,
+      dataCount: customerData[name].length,
+      lastUpdated: Math.max(...customerData[name].map(d => new Date(d.modifiedTime).getTime()))
+    }));
+
+    sendJSON(res, 200, { customers });
+  } catch (error) {
+    console.error('Error fetching customers:', error);
+    sendJSON(res, 500, { error: 'Failed to fetch customer data' });
+  }
+}
+
+// GET /api/customers/:name — get specific customer data
+async function handleApiCustomerDetails(req, res, customerName) {
+  const auth = resolveUser(req);
+  if (!auth) return sendJSON(res, 401, { error: 'Unauthorized' });
+
+  try {
+    const customerData = await getCustomerDataFromDrive();
+    const decodedCustomerName = decodeURIComponent(customerName);
+
+    if (!customerData[decodedCustomerName]) {
+      return sendJSON(res, 404, { error: 'Customer not found' });
+    }
+
+    const data = customerData[decodedCustomerName];
+
+    // Sort by creation time, newest first
+    data.sort((a, b) => new Date(b.createdTime) - new Date(a.createdTime));
+
+    sendJSON(res, 200, {
+      customerName: decodedCustomerName,
+      files: data,
+      totalFiles: data.length
+    });
+  } catch (error) {
+    console.error(`Error fetching data for customer ${customerName}:`, error);
+    sendJSON(res, 500, { error: 'Failed to fetch customer details' });
+  }
+}
+
 // GET /healthz
 function handleHealthz(req, res) {
   sendJSON(res, 200, { status: 'ok' });
@@ -570,6 +757,11 @@ async function requestHandler(req, res) {
     if (pathname === '/api/me') return handleApiMe(req, res);
     if (pathname === '/api/cases') return handleApiCases(req, res);
     if (pathname === '/api/stats') return handleApiStats(req, res);
+    if (pathname === '/api/customers') return await handleApiCustomers(req, res);
+    if (pathname.startsWith('/api/customers/')) {
+      const customerName = pathname.slice('/api/customers/'.length);
+      return await handleApiCustomerDetails(req, res, customerName);
+    }
     if (pathname.startsWith('/api/wiki/')) {
       const wikiFile = pathname.slice('/api/wiki/'.length);
       return handleApiWiki(req, res, wikiFile);

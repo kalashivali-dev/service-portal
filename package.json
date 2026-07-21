@@ -10,6 +10,7 @@
   "dependencies": {
     "marked": "^15.0.0",
     "@google-cloud/firestore": "^7.0.0",
-    "@google-cloud/storage": "^7.0.0"
+    "@google-cloud/storage": "^7.0.0",
+    "googleapis": "^144.0.0"
   }
 }

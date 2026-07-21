@@ -777,6 +777,94 @@
       0%   { background-position: 200% 0; }
       100% { background-position: -200% 0; }
     }
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    /* =========================================================
+       Customer Details
+       ========================================================= */
+    .customer-files {
+      display: grid;
+      gap: 16px;
+    }
+    .customer-file-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow-sm);
+      transition: border-color var(--transition);
+    }
+    .customer-file-card:hover {
+      border-color: var(--border-light);
+    }
+    .customer-file-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .customer-file-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .customer-file-meta {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    .customer-file-week {
+      background: var(--accent-soft);
+      color: var(--accent-hover);
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-weight: 500;
+    }
+    .customer-file-description {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      margin-bottom: 12px;
+    }
+    .customer-file-actions {
+      display: flex;
+      gap: 8px;
+    }
+    .customer-file-btn {
+      background: var(--bg-surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: background var(--transition), color var(--transition);
+    }
+    .customer-file-btn:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+    }
+    .customer-empty-state {
+      text-align: center;
+      padding: 48px 0;
+      color: var(--text-muted);
+    }
+    .customer-empty-state svg {
+      opacity: 0.3;
+      margin-bottom: 12px;
+    }
 
     /* =========================================================
        Responsive
@@ -858,34 +946,34 @@
       </a>
 
       <div class="nav-section-label" style="margin-top:12px;">Customers</div>
-      <div class="nav-link" style="cursor:default;">
+      <a class="nav-link" data-page="customer" data-customer="AbbVie" href="#customer/AbbVie">
         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
         AbbVie
-      </div>
-      <div class="nav-link" style="cursor:default;">
+      </a>
+      <a class="nav-link" data-page="customer" data-customer="Alcon" href="#customer/Alcon">
         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
         Alcon
-      </div>
-      <div class="nav-link" style="cursor:default;">
+      </a>
+      <a class="nav-link" data-page="customer" data-customer="Ascendis" href="#customer/Ascendis">
         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
         Ascendis
-      </div>
-      <div class="nav-link" style="cursor:default;">
+      </a>
+      <a class="nav-link" data-page="customer" data-customer="BMS" href="#customer/BMS">
         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
         BMS
-      </div>
-      <div class="nav-link" style="cursor:default;">
+      </a>
+      <a class="nav-link" data-page="customer" data-customer="Otsuka" href="#customer/Otsuka">
         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
         Otsuka
-      </div>
-      <div class="nav-link" style="cursor:default;">
+      </a>
+      <a class="nav-link" data-page="customer" data-customer="PMI" href="#customer/PMI">
         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
         PMI
-      </div>
-      <div class="nav-link" style="cursor:default;">
+      </a>
+      <a class="nav-link" data-page="customer" data-customer="Zealand" href="#customer/Zealand">
         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
         Zealand
-      </div>
+      </a>
     </div>
 
     <div class="sidebar-footer">
@@ -1123,6 +1211,29 @@
         </div>
       </section>
 
+      <!-- ===== CUSTOMER DETAILS ===== -->
+      <section class="page" id="page-customer">
+        <div class="page-header">
+          <h2 id="customer-title">Customer Details</h2>
+          <p id="customer-subtitle">Weekly updates and presentation data</p>
+        </div>
+
+        <div class="customer-content" id="customer-content">
+          <div class="customer-loading" style="text-align: center; padding: 48px 0; color: var(--text-muted);">
+            <div style="margin-bottom: 16px;">
+              <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="animation: spin 1s linear infinite;">
+                <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+              </svg>
+            </div>
+            <p>Loading customer data...</p>
+          </div>
+
+          <div class="customer-files" id="customer-files" style="display: none;">
+            <!-- Customer files will be populated by JavaScript -->
+          </div>
+        </div>
+      </section>
+
     </main>
   </div>
 </div>
@@ -1170,6 +1281,7 @@ const PAGE_TITLES = {
   cases:     'Cases',
   staff:     'Staff',
   wiki:      'Wiki',
+  customer:  'Customer Details',
 };
 
 // =============================================================================
@@ -1408,12 +1520,133 @@ function initWiki() {
 }
 
 // =============================================================================
+// Customer Details
+// =============================================================================
+let currentCustomer = null;
+
+async function loadCustomerDetails(customerName) {
+  currentCustomer = customerName;
+
+  // Update page title
+  document.getElementById('customer-title').textContent = `${customerName} Details`;
+  document.getElementById('customer-subtitle').textContent = `Weekly updates and presentation data for ${customerName}`;
+
+  // Show loading state
+  const loadingEl = document.querySelector('.customer-loading');
+  const filesEl = document.getElementById('customer-files');
+
+  loadingEl.style.display = 'block';
+  filesEl.style.display = 'none';
+
+  try {
+    const response = await fetch(`/api/customers/${encodeURIComponent(customerName)}`);
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    renderCustomerFiles(data);
+
+  } catch (error) {
+    console.error('Error loading customer details:', error);
+    renderCustomerError(error.message);
+  } finally {
+    loadingEl.style.display = 'none';
+    filesEl.style.display = 'block';
+  }
+}
+
+function renderCustomerFiles(data) {
+  const filesEl = document.getElementById('customer-files');
+
+  if (!data.files || data.files.length === 0) {
+    filesEl.innerHTML = `
+      <div class="customer-empty-state">
+        <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+          <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
+        </svg>
+        <p>No presentation files found for ${data.customerName}</p>
+        <p style="font-size: 12px; margin-top: 4px;">Files will appear here when uploaded to the Google Drive folder</p>
+      </div>
+    `;
+    return;
+  }
+
+  filesEl.innerHTML = data.files.map(file => {
+    const createdDate = new Date(file.createdTime).toLocaleDateString();
+    const modifiedDate = new Date(file.modifiedTime).toLocaleDateString();
+
+    return `
+      <div class="customer-file-card">
+        <div class="customer-file-header">
+          <div class="customer-file-title">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+            </svg>
+            ${file.fileName}
+          </div>
+          <div class="customer-file-meta">
+            <span class="customer-file-week">Week ${file.week}</span>
+            <span>Created: ${createdDate}</span>
+          </div>
+        </div>
+
+        <div class="customer-file-description">
+          ${file.details.description || 'No description available'}
+        </div>
+
+        <div class="customer-file-actions">
+          ${file.details.webViewLink && file.details.webViewLink !== '#' ? `
+            <a href="${file.details.webViewLink}" target="_blank" class="customer-file-btn">
+              <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>
+                <polyline points="15 3 21 3 21 9"/>
+                <line x1="10" y1="14" x2="21" y2="3"/>
+              </svg>
+              View in Drive
+            </a>
+          ` : ''}
+          <div class="customer-file-btn" style="cursor: default;">
+            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
+            </svg>
+            Updated: ${modifiedDate}
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderCustomerError(errorMessage) {
+  const filesEl = document.getElementById('customer-files');
+
+  filesEl.innerHTML = `
+    <div class="customer-empty-state">
+      <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="color: var(--p1-txt);">
+        <path d="M12 9v4M12 17h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+      <p style="color: var(--p1-txt);">Error loading customer data</p>
+      <p style="font-size: 12px; margin-top: 4px; color: var(--text-muted);">${errorMessage}</p>
+    </div>
+  `;
+}
+
+// =============================================================================
 // SPA routing
 // =============================================================================
-const pages = ['dashboard', 'cases', 'staff', 'wiki'];
+const pages = ['dashboard', 'cases', 'staff', 'wiki', 'customer'];
 const pageTitle = document.getElementById('page-title');
 
-function navigateTo(pageId) {
+function navigateTo(pageId, customerName = null) {
+  // Handle customer pages
+  if (pageId.startsWith('customer/')) {
+    customerName = pageId.split('/')[1];
+    pageId = 'customer';
+  }
+
   if (!pages.includes(pageId)) pageId = 'dashboard';
 
   // Toggle visible page
@@ -1422,11 +1655,18 @@ function navigateTo(pageId) {
 
   // Update nav links
   document.querySelectorAll('.nav-link').forEach(link => {
-    link.classList.toggle('active', link.dataset.page === pageId);
+    const isActive = link.dataset.page === pageId &&
+                    (!customerName || link.dataset.customer === customerName);
+    link.classList.toggle('active', isActive);
   });
 
   // Update header title
-  pageTitle.textContent = PAGE_TITLES[pageId] || '';
+  if (pageId === 'customer' && customerName) {
+    pageTitle.textContent = `${customerName} Details`;
+    loadCustomerDetails(customerName);
+  } else {
+    pageTitle.textContent = PAGE_TITLES[pageId] || '';
+  }
 
   // Close mobile sidebar
   document.getElementById('sidebar').classList.remove('open');
@@ -1441,7 +1681,13 @@ document.querySelectorAll('.nav-link').forEach(link => {
   link.addEventListener('click', e => {
     e.preventDefault();
     const page = link.dataset.page;
-    window.location.hash = page;
+    const customer = link.dataset.customer;
+
+    if (page === 'customer' && customer) {
+      window.location.hash = `customer/${customer}`;
+    } else {
+      window.location.hash = page;
+    }
   });
 });
 
