@@ -11,6 +11,9 @@
     "marked": "^15.0.0",
     "@google-cloud/firestore": "^7.0.0",
     "@google-cloud/storage": "^7.0.0",
-    "googleapis": "^144.0.0"
+    "googleapis": "^144.0.0",
+    "officegen": "^0.6.5",
+    "yauzl": "^3.0.0",
+    "xml2js": "^0.6.2"
   }
 }

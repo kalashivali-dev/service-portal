@@ -5,6 +5,9 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import crypto from 'node:crypto';
 import { google } from 'googleapis';
+import yauzl from 'yauzl';
+import xml2js from 'xml2js';
+import { Readable } from 'stream';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -182,13 +185,18 @@ async function getCustomerDataFromDrive() {
           }
         }
 
+        // Extract slides from PowerPoint
+        console.log(`Extracting slides from ${file.name}...`);
+        const slides = await extractSlidesFromPowerPoint(drive, file.id, file.name);
+
         const customerInfo = {
           fileId: file.id,
           fileName: file.name,
           createdTime: file.createdTime,
           modifiedTime: file.modifiedTime,
           week: week,
-          // For now, we'll store basic info - in a real implementation you'd extract slide content
+          slides: slides,
+          totalSlides: slides.length,
           details: await getFileMetadata(drive, file)
         };
 
@@ -262,6 +270,193 @@ async function getFileMetadata(drive, file) {
       note: 'Metadata retrieved from file properties'
     };
   }
+}
+
+// PowerPoint slide extraction functions
+async function extractSlidesFromPowerPoint(drive, fileId, fileName) {
+  try {
+    console.log(`Extracting slides from PowerPoint: ${fileName}`);
+
+    // Download the PowerPoint file
+    const fileBuffer = await downloadFileFromDrive(drive, fileId);
+
+    // Parse PowerPoint file (PPTX is a ZIP file)
+    const slides = await parsePowerPointSlides(fileBuffer);
+
+    console.log(`Extracted ${slides.length} slides from ${fileName}`);
+    return slides;
+
+  } catch (error) {
+    console.error(`Error extracting slides from ${fileName}:`, error.message);
+    return [];
+  }
+}
+
+async function downloadFileFromDrive(drive, fileId) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+
+    drive.files.get({
+      fileId: fileId,
+      alt: 'media'
+    }, { responseType: 'stream' }, (err, response) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+
+      response.data.on('data', chunk => chunks.push(chunk));
+      response.data.on('end', () => {
+        const buffer = Buffer.concat(chunks);
+        resolve(buffer);
+      });
+      response.data.on('error', reject);
+    });
+  });
+}
+
+async function parsePowerPointSlides(buffer) {
+  return new Promise((resolve, reject) => {
+    const slides = [];
+
+    yauzl.fromBuffer(buffer, { lazyEntries: true }, (err, zipfile) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+
+      const slideFiles = [];
+      const slideRelFiles = [];
+
+      zipfile.readEntry();
+      zipfile.on('entry', (entry) => {
+        // Look for slide files
+        if (entry.fileName.match(/^ppt\/slides\/slide\d+\.xml$/)) {
+          slideFiles.push(entry);
+        }
+        zipfile.readEntry();
+      });
+
+      zipfile.on('end', async () => {
+        try {
+          // Process each slide file
+          for (const slideEntry of slideFiles) {
+            const slideContent = await extractSlideContent(zipfile, slideEntry);
+            if (slideContent) {
+              slides.push(slideContent);
+            }
+          }
+
+          resolve(slides);
+        } catch (error) {
+          reject(error);
+        }
+      });
+
+      zipfile.on('error', reject);
+    });
+  });
+}
+
+async function extractSlideContent(zipfile, entry) {
+  return new Promise((resolve, reject) => {
+    zipfile.openReadStream(entry, (err, readStream) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+
+      let xmlContent = '';
+      readStream.on('data', chunk => {
+        xmlContent += chunk.toString();
+      });
+
+      readStream.on('end', async () => {
+        try {
+          // Parse XML to extract text content
+          const parser = new xml2js.Parser();
+          const result = await parser.parseStringPromise(xmlContent);
+
+          const slideNumber = entry.fileName.match(/slide(\d+)\.xml/)[1];
+          const textContent = extractTextFromSlideXML(result);
+
+          resolve({
+            slideNumber: parseInt(slideNumber),
+            fileName: entry.fileName,
+            textContent: textContent,
+            rawXml: xmlContent
+          });
+        } catch (error) {
+          console.warn(`Error parsing slide ${entry.fileName}:`, error.message);
+          resolve(null);
+        }
+      });
+
+      readStream.on('error', reject);
+    });
+  });
+}
+
+function extractTextFromSlideXML(xmlObject) {
+  const textElements = [];
+
+  function traverse(obj) {
+    if (typeof obj === 'string') {
+      textElements.push(obj);
+    } else if (Array.isArray(obj)) {
+      obj.forEach(traverse);
+    } else if (obj && typeof obj === 'object') {
+      Object.values(obj).forEach(traverse);
+    }
+  }
+
+  // Focus on text elements in PowerPoint XML
+  if (xmlObject['p:sld'] && xmlObject['p:sld']['p:cSld']) {
+    traverse(xmlObject['p:sld']['p:cSld']);
+  }
+
+  return textElements.filter(text =>
+    text.trim().length > 0 &&
+    !text.match(/^\s*$/) &&
+    text.length < 1000 // Filter out very long strings that are likely not titles
+  );
+}
+
+function findCustomerSlide(slides, customerName) {
+  console.log(`Looking for slide containing customer: ${customerName}`);
+
+  const customerPatterns = {
+    'AbbVie': ['abbvie', 'abb vie', 'abv'],
+    'Alcon': ['alcon'],
+    'Ascendis': ['ascendis', 'ascend'],
+    'BMS': ['bms', 'bristol', 'myers', 'bristol-myers', 'bristol myers squibb'],
+    'Otsuka': ['otsuka', 'otsu'],
+    'PMI': ['pmi', 'philip morris'],
+    'Zealand': ['zealand', 'zeal']
+  };
+
+  const patterns = customerPatterns[customerName] || [customerName.toLowerCase()];
+
+  for (const slide of slides) {
+    const slideText = slide.textContent.join(' ').toLowerCase();
+
+    // Check if any customer pattern matches the slide content
+    const hasCustomerName = patterns.some(pattern =>
+      slideText.includes(pattern.toLowerCase())
+    );
+
+    if (hasCustomerName) {
+      console.log(`Found customer ${customerName} in slide ${slide.slideNumber}`);
+      return {
+        ...slide,
+        customerName,
+        matchedPattern: patterns.find(p => slideText.includes(p.toLowerCase()))
+      };
+    }
+  }
+
+  console.log(`No slide found for customer ${customerName}`);
+  return null;
 }
 
 function extractCustomerNamesFromFileName(fileName) {
@@ -797,10 +992,24 @@ async function handleApiCustomerDetails(req, res, customerName) {
     // Sort by creation time, newest first
     data.sort((a, b) => new Date(b.createdTime) - new Date(a.createdTime));
 
+    // Extract customer-specific slides from each file
+    const filesWithCustomerSlides = data.map(file => {
+      const customerSlide = file.slides ? findCustomerSlide(file.slides, decodedCustomerName) : null;
+
+      return {
+        ...file,
+        customerSlide: customerSlide,
+        hasCustomerSlide: !!customerSlide,
+        slideText: customerSlide ? customerSlide.textContent : null
+      };
+    }).filter(file => file.hasCustomerSlide || !file.slides); // Include files that have customer slides or no slides extracted
+
+    console.log(`Found ${filesWithCustomerSlides.length} files with customer slides for ${decodedCustomerName}`);
+
     sendJSON(res, 200, {
       customerName: decodedCustomerName,
-      files: data,
-      totalFiles: data.length
+      files: filesWithCustomerSlides,
+      totalFiles: filesWithCustomerSlides.length
     });
   } catch (error) {
     console.error(`Error fetching data for customer ${customerName}:`, error);
