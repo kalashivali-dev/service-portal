@@ -760,6 +760,103 @@ function handleHealthz(req, res) {
   sendJSON(res, 200, { status: 'ok' });
 }
 
+// GET /api/drive-debug — debug Google Drive API setup
+async function handleDriveDebug(req, res) {
+  const auth = resolveUser(req);
+  if (!auth) return sendJSON(res, 401, { error: 'Unauthorized' });
+
+  const debug = {
+    timestamp: new Date().toISOString(),
+    driveFolder: DRIVE_FOLDER_ID,
+    environment: process.env.NODE_ENV || 'development',
+    hasGoogleAuth: !!google.auth,
+    tests: []
+  };
+
+  // Test 1: Check if we can initialize auth
+  try {
+    const authClient = await getDriveAuth();
+    debug.tests.push({
+      name: 'Auth Initialization',
+      status: 'success',
+      message: 'Google auth initialized successfully'
+    });
+
+    // Test 2: Get the service account email
+    try {
+      const client = await authClient.getClient();
+      const credentials = await authClient.getCredentials();
+      debug.serviceAccountEmail = credentials.client_email || 'Unknown';
+      debug.tests.push({
+        name: 'Service Account Info',
+        status: 'success',
+        message: `Using service account: ${debug.serviceAccountEmail}`
+      });
+    } catch (credError) {
+      debug.tests.push({
+        name: 'Service Account Info',
+        status: 'warning',
+        message: `Could not get service account info: ${credError.message}`
+      });
+    }
+
+    // Test 3: Try to access Drive API
+    try {
+      const drive = await getDriveService();
+      debug.tests.push({
+        name: 'Drive API Service',
+        status: 'success',
+        message: 'Drive API service created successfully'
+      });
+
+      // Test 4: Test folder access
+      try {
+        const folderInfo = await drive.files.get({
+          fileId: DRIVE_FOLDER_ID,
+          fields: 'id, name, owners, permissions'
+        });
+
+        debug.tests.push({
+          name: 'Folder Access',
+          status: 'success',
+          message: `Successfully accessed folder: ${folderInfo.data.name}`
+        });
+
+        debug.folderInfo = {
+          id: folderInfo.data.id,
+          name: folderInfo.data.name,
+          owners: folderInfo.data.owners
+        };
+
+      } catch (folderError) {
+        debug.tests.push({
+          name: 'Folder Access',
+          status: 'error',
+          message: `Cannot access folder: ${folderError.message}`,
+          code: folderError.code,
+          details: folderError.errors
+        });
+      }
+
+    } catch (driveError) {
+      debug.tests.push({
+        name: 'Drive API Service',
+        status: 'error',
+        message: `Drive API service failed: ${driveError.message}`
+      });
+    }
+
+  } catch (authError) {
+    debug.tests.push({
+      name: 'Auth Initialization',
+      status: 'error',
+      message: `Auth failed: ${authError.message}`
+    });
+  }
+
+  sendJSON(res, 200, debug);
+}
+
 // GET / — serve index.html (auth-gated)
 function handleIndex(req, res) {
   const auth = resolveUser(req);
@@ -810,6 +907,7 @@ async function requestHandler(req, res) {
     if (pathname === '/oauth2/callback') return await handleOAuthCallback(req, res, parsedUrl.searchParams);
     if (pathname === '/logout') return handleLogout(req, res);
     if (pathname === '/healthz') return handleHealthz(req, res);
+    if (pathname === '/api/drive-debug') return await handleDriveDebug(req, res);
     if (pathname === '/api/me') return handleApiMe(req, res);
     if (pathname === '/api/cases') return handleApiCases(req, res);
     if (pathname === '/api/stats') return handleApiStats(req, res);
