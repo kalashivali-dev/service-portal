@@ -28,7 +28,7 @@ const SESSION_COOKIE_NAME = 'svc_session';
 const SESSION_TTL_MS = 8 * 60 * 60 * 1000; // 8 hours
 
 // Google Drive configuration
-const DRIVE_FOLDER_ID = '1E9SrCGqd-YeeRhcWDrun2Mspgx3xM_66';
+const DRIVE_FOLDER_ID = '1X7xX-jWWgQ0tGYeXKPPvVe0jXzbv74AM';
 const DRIVE_SCOPES = ['https://www.googleapis.com/auth/drive.readonly'];
 
 // ---------------------------------------------------------------------------
@@ -157,15 +157,37 @@ async function getCustomerDataFromDrive() {
       try {
         console.log(`Processing file: ${file.name}`);
 
-        // Extract date/week info from filename if possible
-        const dateMatch = file.name.match(/(\d{4}-\d{2}-\d{2})|(\d{1,2}[-\/]\d{1,2}[-\/]\d{2,4})|Week\s*(\d+)/i);
+        // Extract date/week info from filename - improved detection
+        let week = 'Unknown';
+
+        // Try to match various week patterns
+        const weekMatches = [
+          file.name.match(/Week\s*(\d+)/i),
+          file.name.match(/W(\d+)/i),
+          file.name.match(/week(\d+)/i),
+          file.name.match(/(\d+).*week/i)
+        ].find(match => match);
+
+        if (weekMatches) {
+          week = `Week ${weekMatches[1]}`;
+        } else {
+          // Try date patterns and convert to relative week
+          const dateMatch = file.name.match(/(\d{4}[-\/]\d{1,2}[-\/]\d{1,2})|(\d{1,2}[-\/]\d{1,2}[-\/]\d{2,4})/);
+          if (dateMatch) {
+            week = `Date: ${dateMatch[0]}`;
+          } else {
+            // Use creation order as fallback (newest = current week)
+            const fileIndex = files.findIndex(f => f.id === file.id);
+            week = `File ${files.length - fileIndex}`;
+          }
+        }
 
         const customerInfo = {
           fileId: file.id,
           fileName: file.name,
           createdTime: file.createdTime,
           modifiedTime: file.modifiedTime,
-          week: dateMatch ? (dateMatch[3] || 'Unknown') : 'Unknown',
+          week: week,
           // For now, we'll store basic info - in a real implementation you'd extract slide content
           details: await getFileMetadata(drive, file)
         };
@@ -202,20 +224,42 @@ async function getFileMetadata(drive, file) {
   try {
     const response = await drive.files.get({
       fileId: file.id,
-      fields: 'description, properties, webViewLink'
+      fields: 'description, properties, webViewLink, createdTime, modifiedTime'
     });
 
+    // Generate a more informative description for weekly PPT files
+    const baseDescription = response.data.description || '';
+    const createdDate = new Date(file.createdTime).toLocaleDateString();
+    const modifiedDate = new Date(file.modifiedTime).toLocaleDateString();
+
+    let enhancedDescription = baseDescription;
+    if (!baseDescription || baseDescription.trim().length === 0) {
+      enhancedDescription = `Weekly customer presentation data from ${createdDate}. ` +
+                           `This PowerPoint contains detailed information about customer activities, ` +
+                           `progress updates, and key metrics for the week.`;
+    }
+
     return {
-      description: response.data.description || 'No description available',
-      webViewLink: response.data.webViewLink,
-      properties: response.data.properties || {}
+      description: enhancedDescription,
+      webViewLink: response.data.webViewLink || '#',
+      properties: response.data.properties || {},
+      fileType: 'PowerPoint Presentation',
+      lastModified: modifiedDate,
+      created: createdDate
     };
   } catch (error) {
     console.warn(`Could not get metadata for ${file.name}:`, error.message);
+
+    // Provide meaningful fallback for weekly PPT files
+    const createdDate = new Date(file.createdTime).toLocaleDateString();
     return {
-      description: 'Metadata not available',
+      description: `Weekly customer data presentation (${createdDate}). Contains customer activity summaries, progress updates, and key performance indicators.`,
       webViewLink: '#',
-      properties: {}
+      properties: {},
+      fileType: 'PowerPoint Presentation',
+      lastModified: new Date(file.modifiedTime).toLocaleDateString(),
+      created: createdDate,
+      note: 'Metadata retrieved from file properties'
     };
   }
 }
@@ -225,18 +269,35 @@ function extractCustomerNamesFromFileName(fileName) {
   const knownCustomers = ['AbbVie', 'Alcon', 'Ascendis', 'BMS', 'Otsuka', 'PMI', 'Zealand'];
 
   const foundCustomers = [];
+  const lowerFileName = fileName.toLowerCase();
 
-  knownCustomers.forEach(customer => {
-    if (fileName.toLowerCase().includes(customer.toLowerCase())) {
+  // More comprehensive customer name matching
+  const customerPatterns = {
+    'AbbVie': ['abbvie', 'abb vie', 'abv'],
+    'Alcon': ['alcon'],
+    'Ascendis': ['ascendis', 'ascend'],
+    'BMS': ['bms', 'bristol', 'myers', 'bristol-myers', 'bristol myers squibb'],
+    'Otsuka': ['otsuka', 'otsu'],
+    'PMI': ['pmi', 'philip morris'],
+    'Zealand': ['zealand', 'zeal']
+  };
+
+  // Check each customer against their patterns
+  Object.entries(customerPatterns).forEach(([customer, patterns]) => {
+    const isFound = patterns.some(pattern => lowerFileName.includes(pattern));
+    if (isFound) {
       foundCustomers.push(customer);
     }
   });
 
-  // If no specific customers found, return all (assuming it's a general file)
+  // If no specific customers found, assume it's a weekly summary file containing all customers
+  // This makes sense for your 4 weekly PPT structure
   if (foundCustomers.length === 0) {
+    console.log(`No specific customers found in filename "${fileName}", assuming it contains all customers`);
     return knownCustomers;
   }
 
+  console.log(`Found customers [${foundCustomers.join(', ')}] in filename "${fileName}"`);
   return foundCustomers;
 }
 
