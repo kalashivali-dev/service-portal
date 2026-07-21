@@ -490,14 +490,29 @@ function extractTextFromSlideXML(xmlObject) {
 
   // Clean up text elements - remove formatting artifacts
   const cleanedElements = textElements.filter(text => {
-    // Filter out common formatting strings
-    const formatStrings = ['Arial', 'Calibri', 'none', 'noStrike', 'solid', 'flat', 'ctr', 'en-US'];
+    // Filter out common formatting strings and technical artifacts
+    const formatStrings = ['Arial', 'Calibri', 'none', 'noStrike', 'solid', 'flat', 'ctr', 'en-US', 'dk1', 'sm', 'sng'];
     const isFormatString = formatStrings.some(format => text.includes(format));
     const isColor = text.match(/^[0-9A-F]{6}$/i);
     const isNumber = text.match(/^[0-9]+$/);
     const isShort = text.length < 3;
+    const isShape = text.includes('Shape') || text.includes('Google.Shape');
+    const isURL = text.includes('http://') || text.includes('https://') || text.includes('schemas.openxmlformats');
+    const isGUID = text.match(/[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}/i);
+    const isXMLArtifact = ['b', 'flat', 'sng', '9525', '45700', '000000', '1000', 'EFEFEF'].includes(text);
 
-    return !isFormatString && !isColor && !isNumber && !isShort;
+    return !isFormatString && !isColor && !isNumber && !isShort && !isShape && !isURL && !isGUID && !isXMLArtifact;
+  });
+
+  // Further filter to get only business-relevant content
+  const businessContent = cleanedElements.filter(text => {
+    // Keep text that looks like business information
+    const hasLetters = text.match(/[a-zA-Z]/);
+    const hasMultipleWords = text.includes(' ');
+    const isBusinessTerm = /^(Customer|Status|Information|Activities|Projects|Tickets|License|SOW|Current|Future|Management|Alerts|Risks|Key|Total|Volume|Critical|Demo|Meeting|Weekly)/.test(text);
+    const isMeaningfulContent = text.length > 5 && (hasMultipleWords || isBusinessTerm);
+
+    return hasLetters && isMeaningfulContent;
   });
 
   return {
@@ -1131,16 +1146,29 @@ async function handleApiCustomerDetails(req, res, customerName) {
         ...file,
         customerSlide: customerSlide,
         hasCustomerSlide: !!customerSlide,
-        slideText: customerSlide ? customerSlide.textContent : null
+        slideText: customerSlide ? customerSlide.textContent : null,
+        weekName: file.fileName.replace('.pptx', '').replace('.ppt', ''), // Use filename as week name
+        slideImageUrl: customerSlide ? `/api/slide-image/${file.fileId}/${customerSlide.slideNumber}` : null
       };
     }).filter(file => file.hasCustomerSlide || !file.slides); // Include files that have customer slides or no slides extracted
 
     console.log(`Found ${filesWithCustomerSlides.length} files with customer slides for ${decodedCustomerName}`);
 
+    // Organize by weeks for dropdown
+    const weeks = filesWithCustomerSlides.map(file => ({
+      id: file.fileId,
+      name: file.weekName,
+      fileName: file.fileName,
+      createdTime: file.createdTime,
+      week: file.week
+    }));
+
     sendJSON(res, 200, {
       customerName: decodedCustomerName,
       files: filesWithCustomerSlides,
-      totalFiles: filesWithCustomerSlides.length
+      weeks: weeks,
+      totalFiles: filesWithCustomerSlides.length,
+      mostRecentWeek: weeks.length > 0 ? weeks[0] : null
     });
   } catch (error) {
     console.error(`Error fetching data for customer ${customerName}:`, error);
@@ -1270,18 +1298,109 @@ async function handleSlideImage(req, res, slideParams) {
       return sendJSON(res, 400, { error: 'Invalid parameters' });
     }
 
-    // For now, return a placeholder response
-    // In a full implementation, this would serve the actual slide image
-    sendJSON(res, 200, {
-      message: 'Slide image endpoint - not yet implemented',
-      fileId,
-      slideNumber: parseInt(slideNumber)
-    });
+    console.log(`Generating slide image for file ${fileId}, slide ${slideNumber}`);
+
+    const drive = await getDriveService();
+    const slideImageData = await generateSlideImage(drive, fileId, parseInt(slideNumber));
+
+    if (slideImageData) {
+      // Serve the image
+      res.writeHead(200, {
+        'Content-Type': slideImageData.mimeType || 'image/png',
+        'Content-Length': slideImageData.data.length,
+        'Cache-Control': 'public, max-age=3600' // Cache for 1 hour
+      });
+      res.end(slideImageData.data);
+    } else {
+      // Return a placeholder image
+      sendJSON(res, 404, { error: 'Slide image not available' });
+    }
 
   } catch (error) {
     console.error('Error serving slide image:', error);
     sendJSON(res, 500, { error: 'Failed to serve slide image' });
   }
+}
+
+async function generateSlideImage(drive, fileId, slideNumber) {
+  try {
+    // Method 1: Try to convert PowerPoint to Google Slides and get thumbnail
+    console.log(`Attempting to generate image for slide ${slideNumber}`);
+
+    // Copy the PowerPoint file to Google Slides format
+    const copiedFile = await drive.files.copy({
+      fileId: fileId,
+      requestBody: {
+        name: `temp_slides_${Date.now()}`,
+        mimeType: 'application/vnd.google-apps.presentation'
+      }
+    });
+
+    if (copiedFile.data.id) {
+      try {
+        // Try to export as PDF first, then convert individual pages
+        const pdfData = await drive.files.export({
+          fileId: copiedFile.data.id,
+          mimeType: 'application/pdf'
+        }, { responseType: 'stream' });
+
+        const pdfBuffer = await streamToBuffer(pdfData.data);
+
+        // Clean up the temporary file
+        await drive.files.delete({ fileId: copiedFile.data.id }).catch(() => {});
+
+        return {
+          data: pdfBuffer,
+          mimeType: 'application/pdf'
+        };
+
+      } catch (exportError) {
+        console.warn('Could not export slides as PDF:', exportError.message);
+
+        // Clean up the temporary file
+        await drive.files.delete({ fileId: copiedFile.data.id }).catch(() => {});
+      }
+    }
+
+    // Method 2: Fallback to creating a placeholder image with slide info
+    return await createPlaceholderSlideImage(slideNumber);
+
+  } catch (error) {
+    console.error(`Error generating slide image:`, error.message);
+    return await createPlaceholderSlideImage(slideNumber);
+  }
+}
+
+function streamToBuffer(stream) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    stream.on('data', chunk => chunks.push(chunk));
+    stream.on('end', () => resolve(Buffer.concat(chunks)));
+    stream.on('error', reject);
+  });
+}
+
+async function createPlaceholderSlideImage(slideNumber) {
+  // Create a simple SVG placeholder for now
+  const svgContent = `
+    <svg width="800" height="600" xmlns="http://www.w3.org/2000/svg">
+      <rect width="800" height="600" fill="#f8fafc" stroke="#e2e8f0" stroke-width="2"/>
+      <text x="400" y="280" text-anchor="middle" font-family="Arial" font-size="24" fill="#374151">
+        Slide ${slideNumber}
+      </text>
+      <text x="400" y="320" text-anchor="middle" font-family="Arial" font-size="16" fill="#6b7280">
+        PowerPoint Content
+      </text>
+      <text x="400" y="350" text-anchor="middle" font-family="Arial" font-size="12" fill="#9ca3af">
+        (Image conversion in progress)
+      </text>
+    </svg>
+  `;
+
+  return {
+    data: Buffer.from(svgContent),
+    mimeType: 'image/svg+xml'
+  };
 }
 
 // GET / — serve index.html (auth-gated)

@@ -785,6 +785,37 @@
     /* =========================================================
        Customer Details
        ========================================================= */
+    .week-selector {
+      margin: 0 24px 20px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+    }
+    .week-label {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+    .week-dropdown {
+      background: var(--bg-surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 8px 12px;
+      font-size: 14px;
+      color: var(--text-primary);
+      min-width: 300px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .week-dropdown:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
     .customer-files {
       display: grid;
       gap: 16px;
@@ -896,7 +927,25 @@
       font-style: italic;
     }
 
-    /* Slide visual content - mimicking PowerPoint layout */
+    /* Slide image container */
+    .slide-image-container {
+      position: relative;
+      background: #ffffff;
+      border-radius: 0 0 var(--radius) var(--radius);
+      overflow: hidden;
+    }
+    .slide-image-frame {
+      width: 100%;
+      height: 600px;
+      border: none;
+      display: block;
+      background: #ffffff;
+    }
+    .slide-image-fallback {
+      display: none;
+    }
+
+    /* Fallback content when image doesn't load */
     .slide-visual-content {
       padding: 20px;
       background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
@@ -907,6 +956,14 @@
     [data-theme="dark"] .slide-visual-content {
       background: linear-gradient(135deg, var(--bg-surface) 0%, var(--bg-surface2) 100%);
       color: var(--text-primary);
+    }
+    .slide-info-text {
+      margin-bottom: 16px;
+    }
+    .slide-info-text p {
+      margin: 4px 0;
+      font-size: 14px;
+      line-height: 1.5;
     }
 
     .slide-customer-title {
@@ -1330,6 +1387,14 @@
           <p id="customer-subtitle">Weekly updates and presentation data</p>
         </div>
 
+        <!-- Week Selection Dropdown -->
+        <div class="week-selector" id="week-selector" style="display: none;">
+          <label for="week-dropdown" class="week-label">Select Week:</label>
+          <select id="week-dropdown" class="week-dropdown">
+            <!-- Options populated by JavaScript -->
+          </select>
+        </div>
+
         <div class="customer-content" id="customer-content">
           <div class="customer-loading" style="text-align: center; padding: 48px 0; color: var(--text-muted);">
             <div style="margin-bottom: 16px;">
@@ -1635,6 +1700,7 @@ function initWiki() {
 // Customer Details
 // =============================================================================
 let currentCustomer = null;
+let currentCustomerData = null;
 
 async function loadCustomerDetails(customerName) {
   currentCustomer = customerName;
@@ -1646,9 +1712,11 @@ async function loadCustomerDetails(customerName) {
   // Show loading state
   const loadingEl = document.querySelector('.customer-loading');
   const filesEl = document.getElementById('customer-files');
+  const weekSelector = document.getElementById('week-selector');
 
   loadingEl.style.display = 'block';
   filesEl.style.display = 'none';
+  weekSelector.style.display = 'none';
 
   try {
     const response = await fetch(`/api/customers/${encodeURIComponent(customerName)}`);
@@ -1658,7 +1726,17 @@ async function loadCustomerDetails(customerName) {
     }
 
     const data = await response.json();
-    renderCustomerFiles(data);
+    currentCustomerData = data;
+
+    // Setup week dropdown
+    setupWeekDropdown(data);
+
+    // Show most recent week by default
+    if (data.mostRecentWeek) {
+      renderCustomerWeek(data, data.mostRecentWeek.id);
+    } else {
+      renderCustomerFiles(data);
+    }
 
   } catch (error) {
     console.error('Error loading customer details:', error);
@@ -1666,6 +1744,56 @@ async function loadCustomerDetails(customerName) {
   } finally {
     loadingEl.style.display = 'none';
     filesEl.style.display = 'block';
+    if (currentCustomerData && currentCustomerData.weeks && currentCustomerData.weeks.length > 0) {
+      weekSelector.style.display = 'flex';
+    }
+  }
+}
+
+function setupWeekDropdown(data) {
+  const dropdown = document.getElementById('week-dropdown');
+  const weekSelector = document.getElementById('week-selector');
+
+  if (!data.weeks || data.weeks.length === 0) {
+    weekSelector.style.display = 'none';
+    return;
+  }
+
+  // Clear existing options
+  dropdown.innerHTML = '';
+
+  // Add week options (most recent first)
+  data.weeks.forEach(week => {
+    const option = document.createElement('option');
+    option.value = week.id;
+    option.textContent = week.name;
+    dropdown.appendChild(option);
+  });
+
+  // Set default to most recent
+  if (data.mostRecentWeek) {
+    dropdown.value = data.mostRecentWeek.id;
+  }
+
+  // Add change listener
+  dropdown.addEventListener('change', (e) => {
+    const selectedWeekId = e.target.value;
+    renderCustomerWeek(currentCustomerData, selectedWeekId);
+  });
+
+  weekSelector.style.display = 'flex';
+}
+
+function renderCustomerWeek(data, weekId) {
+  // Find the selected week's file
+  const selectedFile = data.files.find(file => file.fileId === weekId);
+
+  if (selectedFile) {
+    // Render just this week's data
+    renderCustomerFiles({
+      ...data,
+      files: [selectedFile]
+    });
   }
 }
 
@@ -1689,20 +1817,12 @@ function renderCustomerFiles(data) {
     const createdDate = new Date(file.createdTime).toLocaleDateString();
     const modifiedDate = new Date(file.modifiedTime).toLocaleDateString();
 
-    // Render customer slide content if available
+    // Render customer slide content as image
     let slideContent = '';
     if (file.customerSlide && file.hasCustomerSlide) {
       const slide = file.customerSlide;
       const matchInfo = slide.matchType === 'title' ? 'Title Match' :
                        slide.matchType === 'possibleTitle' ? 'Possible Title Match' : 'Content Match';
-
-      // Filter and organize slide text content
-      const slideText = Array.isArray(file.slideText) ? file.slideText : (file.slideText ? [file.slideText] : []);
-      const meaningfulText = slideText.filter(text =>
-        text && text.trim().length > 2 &&
-        !text.match(/^[0-9\s\-\.]+$/) &&
-        !['Arial', 'Calibri', 'none', 'noStrike', 'solid', 'flat', 'ctr', 'en-US'].some(format => text.includes(format))
-      );
 
       slideContent = `
         <div class="customer-slide-content">
@@ -1716,18 +1836,27 @@ function renderCustomerFiles(data) {
             </div>
             <div class="slide-match-info">${matchInfo}: "${slide.matchedPattern}"</div>
           </div>
-          <div class="slide-visual-content">
-            <div class="slide-customer-title">${data.customerName}</div>
-            ${meaningfulText.length > 0 ? `
-              <div class="slide-content-sections">
-                ${meaningfulText.slice(0, 10).map(text => `
-                  <div class="slide-content-item">${escapeHtml(text)}</div>
-                `).join('')}
+          <div class="slide-image-container">
+            <iframe
+              src="${file.slideImageUrl}"
+              class="slide-image-frame"
+              title="Customer Slide - ${data.customerName}"
+              loading="lazy">
+            </iframe>
+            <div class="slide-image-fallback">
+              <div class="slide-visual-content">
+                <div class="slide-customer-title">${data.customerName}</div>
+                <div class="slide-info-text">
+                  <p><strong>Week:</strong> ${file.week}</p>
+                  <p><strong>File:</strong> ${file.fileName}</p>
+                  <p><strong>Slide:</strong> ${slide.slideNumber} of ${file.totalSlides}</p>
+                  <p><strong>Match:</strong> ${slide.matchedPattern}</p>
+                </div>
+                <div class="slide-footer">
+                  <span>📊 Customer Presentation Data</span>
+                  <span>Slide ${slide.slideNumber} of ${file.totalSlides}</span>
+                </div>
               </div>
-            ` : ''}
-            <div class="slide-footer">
-              <span>📊 Customer Presentation Data</span>
-              <span>Slide ${slide.slideNumber} of ${file.totalSlides}</span>
             </div>
           </div>
         </div>
