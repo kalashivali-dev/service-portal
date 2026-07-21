@@ -462,64 +462,110 @@ async function extractSlideContent(zipfile, entry) {
 }
 
 function extractTextFromSlideXML(xmlObject) {
-  const textElements = [];
-  const slideTitle = [];
+  const allTextElements = [];
+  const structuredContent = {
+    title: null,
+    sections: [],
+    tables: [],
+    bulletPoints: []
+  };
 
-  function traverse(obj, depth = 0) {
+  function extractText(obj, context = '') {
     if (typeof obj === 'string') {
-      const cleanText = obj.trim();
-      if (cleanText.length > 0 && cleanText.length < 200 && !cleanText.match(/^\s*$/) && !cleanText.match(/^[0-9\s\-\.]+$/)) {
-        textElements.push(cleanText);
-
-        // First few meaningful text elements are likely to be titles
-        if (slideTitle.length < 3 && cleanText.length > 2) {
-          slideTitle.push(cleanText);
-        }
+      const text = obj.trim();
+      if (text.length > 0) {
+        allTextElements.push({ text, context });
+        return text;
       }
     } else if (Array.isArray(obj)) {
-      obj.forEach(item => traverse(item, depth + 1));
+      return obj.map(item => extractText(item, context)).filter(Boolean);
     } else if (obj && typeof obj === 'object') {
-      Object.values(obj).forEach(value => traverse(value, depth + 1));
+      const results = [];
+      for (const [key, value] of Object.entries(obj)) {
+        const newContext = key.includes('tbl') ? 'table' :
+                          key.includes('title') ? 'title' :
+                          key.includes('body') ? 'body' : context;
+        const result = extractText(value, newContext);
+        if (result) results.push(result);
+      }
+      return results.flat();
     }
+    return null;
   }
 
-  // Focus on text elements in PowerPoint XML
+  // Extract all text from the slide
   if (xmlObject['p:sld'] && xmlObject['p:sld']['p:cSld']) {
-    traverse(xmlObject['p:sld']['p:cSld']);
+    extractText(xmlObject['p:sld']['p:cSld']);
   }
 
-  // Clean up text elements - remove formatting artifacts
-  const cleanedElements = textElements.filter(text => {
-    // Filter out common formatting strings and technical artifacts
-    const formatStrings = ['Arial', 'Calibri', 'none', 'noStrike', 'solid', 'flat', 'ctr', 'en-US', 'dk1', 'sm', 'sng'];
-    const isFormatString = formatStrings.some(format => text.includes(format));
-    const isColor = text.match(/^[0-9A-F]{6}$/i);
-    const isNumber = text.match(/^[0-9]+$/);
-    const isShort = text.length < 3;
-    const isShape = text.includes('Shape') || text.includes('Google.Shape');
-    const isURL = text.includes('http://') || text.includes('https://') || text.includes('schemas.openxmlformats');
-    const isGUID = text.match(/[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}/i);
-    const isXMLArtifact = ['b', 'flat', 'sng', '9525', '45700', '000000', '1000', 'EFEFEF'].includes(text);
+  // Clean and organize the extracted text
+  const cleanText = allTextElements
+    .map(item => item.text)
+    .filter(text => {
+      // More lenient filtering to keep all meaningful content
+      if (text.length < 2) return false;
 
-    return !isFormatString && !isColor && !isNumber && !isShort && !isShape && !isURL && !isGUID && !isXMLArtifact;
-  });
+      // Skip obvious formatting strings
+      const formatStrings = ['Arial', 'Calibri', 'none', 'noStrike', 'solid', 'flat', 'ctr', 'en-US', 'dk1', 'sm', 'sng'];
+      if (formatStrings.some(format => text.includes(format))) return false;
 
-  // Further filter to get only business-relevant content
-  const businessContent = cleanedElements.filter(text => {
-    // Keep text that looks like business information
-    const hasLetters = text.match(/[a-zA-Z]/);
-    const hasMultipleWords = text.includes(' ');
-    const isBusinessTerm = /^(Customer|Status|Information|Activities|Projects|Tickets|License|SOW|Current|Future|Management|Alerts|Risks|Key|Total|Volume|Critical|Demo|Meeting|Weekly)/.test(text);
-    const isMeaningfulContent = text.length > 5 && (hasMultipleWords || isBusinessTerm);
+      // Skip colors and pure numbers
+      if (text.match(/^[0-9A-F]{6}$/i) || text.match(/^[0-9]+$/)) return false;
 
-    return hasLetters && isMeaningfulContent;
-  });
+      // Skip URLs and technical identifiers
+      if (text.includes('http') || text.includes('schemas.openxml') || text.includes('Google.Shape')) return false;
+
+      // Skip common XML artifacts
+      const xmlArtifacts = ['b', 'flat', 'sng', '9525', '45700', '000000', '1000', 'EFEFEF'];
+      if (xmlArtifacts.includes(text)) return false;
+
+      return true;
+    })
+    .filter((text, index, arr) => arr.indexOf(text) === index); // Remove duplicates
+
+  // Organize content
+  const organizedContent = organizeSlideContent(cleanText);
 
   return {
-    allText: cleanedElements,
-    title: slideTitle.length > 0 ? slideTitle[0] : null,
-    possibleTitles: slideTitle
+    allText: cleanText,
+    structured: organizedContent,
+    rawCount: allTextElements.length,
+    cleanCount: cleanText.length
   };
+}
+
+function organizeSlideContent(textArray) {
+  const content = {
+    title: null,
+    sections: [],
+    keyInfo: [],
+    metrics: [],
+    activities: [],
+    other: []
+  };
+
+  textArray.forEach((text, index) => {
+    // First meaningful text is likely the title
+    if (!content.title && text.length > 3 && !text.match(/^[0-9\s\-\.\|]+$/)) {
+      content.title = text;
+      return;
+    }
+
+    // Categorize content based on keywords and patterns
+    const lowerText = text.toLowerCase();
+
+    if (lowerText.includes('customer') || lowerText.includes('status') || lowerText.includes('sentiment')) {
+      content.keyInfo.push(text);
+    } else if (lowerText.match(/\d+/) && (lowerText.includes('ticket') || lowerText.includes('license') || lowerText.includes('sow'))) {
+      content.metrics.push(text);
+    } else if (lowerText.includes('activity') || lowerText.includes('project') || lowerText.includes('demo') || lowerText.includes('meeting')) {
+      content.activities.push(text);
+    } else if (text.length > 5) {
+      content.other.push(text);
+    }
+  });
+
+  return content;
 }
 
 function findCustomerSlide(slides, customerName) {

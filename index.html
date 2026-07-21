@@ -927,23 +927,21 @@
       font-style: italic;
     }
 
-    /* Slide image container */
-    .slide-image-container {
-      position: relative;
+    /* Slide content display */
+    .slide-content-display {
       background: #ffffff;
       border-radius: 0 0 var(--radius) var(--radius);
       overflow: hidden;
       min-height: 400px;
     }
-    .slide-image {
-      width: 100%;
-      max-width: 100%;
-      height: auto;
-      border: none;
-      background: #ffffff;
+    [data-theme="dark"] .slide-content-display {
+      background: var(--bg-surface);
     }
-    .slide-image-fallback {
-      /* Will be shown by default, hidden when image loads */
+
+    .slide-customer-header {
+      background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%);
+      padding: 20px 24px;
+      border-bottom: 3px solid #2E5C8A;
     }
 
     /* Fallback content when image doesn't load */
@@ -968,16 +966,90 @@
     }
 
     .slide-customer-title {
-      font-size: 28px;
+      font-size: 36px;
       font-weight: 700;
-      color: #2563eb;
+      color: #ffffff;
       font-family: 'Calibri', system-ui, sans-serif;
-      margin-bottom: 16px;
+      margin: 0;
       text-align: left;
       letter-spacing: -0.5px;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.2);
     }
-    [data-theme="dark"] .slide-customer-title {
+
+    .slide-all-content {
+      padding: 24px;
+    }
+
+    .slide-section {
+      margin-bottom: 24px;
+    }
+
+    .slide-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .slide-section-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #2563eb;
+      font-family: 'Calibri', system-ui, sans-serif;
+      margin: 0 0 12px 0;
+      padding-bottom: 6px;
+      border-bottom: 2px solid #e5e7eb;
+    }
+    [data-theme="dark"] .slide-section-title {
       color: #60a5fa;
+      border-bottom-color: var(--border);
+    }
+
+    .slide-section-content {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .slide-section-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 12px;
+    }
+
+    .slide-content-item {
+      background: rgba(37, 99, 235, 0.05);
+      border-left: 3px solid #2563eb;
+      padding: 12px 16px;
+      font-size: 14px;
+      line-height: 1.5;
+      border-radius: 0 4px 4px 0;
+      color: #374151;
+    }
+    [data-theme="dark"] .slide-content-item {
+      background: rgba(96, 165, 250, 0.1);
+      border-left-color: #60a5fa;
+      color: var(--text-primary);
+    }
+
+    .slide-metric-item {
+      background: rgba(16, 185, 129, 0.05);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      padding: 12px 16px;
+      font-size: 14px;
+      line-height: 1.4;
+      border-radius: 6px;
+      color: #065f46;
+      font-weight: 500;
+    }
+    [data-theme="dark"] .slide-metric-item {
+      background: rgba(52, 211, 153, 0.1);
+      border-color: rgba(52, 211, 153, 0.3);
+      color: #6ee7b7;
+    }
+
+    .slide-no-content {
+      text-align: center;
+      padding: 40px 20px;
+      color: #6b7280;
+      font-style: italic;
     }
 
     .slide-content-sections {
@@ -1837,29 +1909,21 @@ function renderCustomerFiles(data) {
             </div>
             <div class="slide-match-info">${matchInfo}: "${slide.matchedPattern}"</div>
           </div>
-          <div class="slide-image-container">
-            <img
-              src="${file.slideImageUrl}"
-              class="slide-image"
-              alt="Customer Slide - ${data.customerName}"
-              onload="this.style.display='block'; this.nextElementSibling.style.display='none';"
-              onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"
-              loading="lazy"
-              style="display: none;">
-            <div class="slide-image-fallback" style="display: block;">
-              <div class="slide-visual-content">
-                <div class="slide-customer-title">${data.customerName}</div>
-                <div class="slide-info-text">
-                  <p><strong>Week:</strong> ${file.week}</p>
-                  <p><strong>File:</strong> ${file.fileName}</p>
-                  <p><strong>Slide:</strong> ${slide.slideNumber} of ${file.totalSlides}</p>
-                  <p><strong>Match:</strong> ${slide.matchedPattern}</p>
-                  <p><strong>Status:</strong> Loading slide image...</p>
-                </div>
-                <div class="slide-footer">
-                  <span>📊 Customer Presentation Data</span>
-                  <span>Slide ${slide.slideNumber} of ${file.totalSlides}</span>
-                </div>
+          <div class="slide-content-display">
+            <div class="slide-visual-content">
+              <!-- Customer Title -->
+              <div class="slide-customer-header">
+                <h1 class="slide-customer-title">${data.customerName}</h1>
+              </div>
+
+              <!-- All Slide Content -->
+              <div class="slide-all-content">
+                ${renderAllSlideContent(slide, data.customerName)}
+              </div>
+
+              <div class="slide-footer">
+                <span>📊 Customer Presentation Data</span>
+                <span>Slide ${slide.slideNumber} of ${file.totalSlides}</span>
               </div>
             </div>
           </div>
@@ -1944,6 +2008,129 @@ function escapeHtml(text) {
   const div = document.createElement('div');
   div.textContent = text;
   return div.innerHTML;
+}
+
+// Function to render all slide content in structured format
+function renderAllSlideContent(slide, customerName) {
+  const slideText = Array.isArray(slide.textContent) ? slide.textContent : [];
+
+  if (slideText.length === 0) {
+    return '<div class="slide-no-content">No content extracted from this slide.</div>';
+  }
+
+  // Organize content into meaningful sections
+  const organizedContent = organizeSlideContentForDisplay(slideText, customerName);
+
+  let contentHtml = '';
+
+  // Customer Information Section
+  if (organizedContent.customerInfo.length > 0) {
+    contentHtml += `
+      <div class="slide-section">
+        <h3 class="slide-section-title">Customer Information</h3>
+        <div class="slide-section-content">
+          ${organizedContent.customerInfo.map(text => `<div class="slide-content-item">${escapeHtml(text)}</div>`).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  // Key Metrics Section
+  if (organizedContent.metrics.length > 0) {
+    contentHtml += `
+      <div class="slide-section">
+        <h3 class="slide-section-title">Key Metrics & Data</h3>
+        <div class="slide-section-grid">
+          ${organizedContent.metrics.map(text => `<div class="slide-metric-item">${escapeHtml(text)}</div>`).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  // Activities & Projects Section
+  if (organizedContent.activities.length > 0) {
+    contentHtml += `
+      <div class="slide-section">
+        <h3 class="slide-section-title">Current Activities & Projects</h3>
+        <div class="slide-section-content">
+          ${organizedContent.activities.map(text => `<div class="slide-content-item">${escapeHtml(text)}</div>`).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  // All Other Content
+  if (organizedContent.other.length > 0) {
+    contentHtml += `
+      <div class="slide-section">
+        <h3 class="slide-section-title">Additional Information</h3>
+        <div class="slide-section-content">
+          ${organizedContent.other.map(text => `<div class="slide-content-item">${escapeHtml(text)}</div>`).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  // If we couldn't organize it well, show everything
+  if (!contentHtml) {
+    contentHtml = `
+      <div class="slide-section">
+        <h3 class="slide-section-title">Complete Slide Content</h3>
+        <div class="slide-section-content">
+          ${slideText.map(text => `<div class="slide-content-item">${escapeHtml(text)}</div>`).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  return contentHtml;
+}
+
+// Function to organize slide content for display
+function organizeSlideContentForDisplay(textArray, customerName) {
+  const content = {
+    customerInfo: [],
+    metrics: [],
+    activities: [],
+    other: []
+  };
+
+  textArray.forEach(text => {
+    if (!text || text.trim().length < 2) return;
+
+    const lowerText = text.toLowerCase();
+
+    // Customer information
+    if (lowerText.includes('customer') || lowerText.includes('sentiment') || lowerText.includes('status') ||
+        lowerText.includes('information') || lowerText.includes('csm:') || lowerText.includes('tam:') ||
+        lowerText.includes('lead support') || lowerText.includes('lead ba')) {
+      content.customerInfo.push(text);
+    }
+    // Metrics and numbers
+    else if ((lowerText.includes('ticket') && text.match(/\d/)) ||
+             (lowerText.includes('license') && text.match(/\d/)) ||
+             (lowerText.includes('sow') && text.match(/\d/)) ||
+             lowerText.includes('volume') || lowerText.includes('total') ||
+             lowerText.includes('critical') || lowerText.includes('high') ||
+             lowerText.match(/^\d+/) || lowerText.includes('cumulative')) {
+      content.metrics.push(text);
+    }
+    // Activities and projects
+    else if (lowerText.includes('activity') || lowerText.includes('project') ||
+             lowerText.includes('demo') || lowerText.includes('meeting') ||
+             lowerText.includes('poc') || lowerText.includes('upgrade') ||
+             lowerText.includes('assignment') || lowerText.includes('accomplishment') ||
+             lowerText.includes('current key') || lowerText.includes('future') ||
+             lowerText.includes('alert') || lowerText.includes('risk')) {
+      content.activities.push(text);
+    }
+    // Everything else that's meaningful
+    else if (text.length > 3) {
+      content.other.push(text);
+    }
+  });
+
+  return content;
 }
 
 // =============================================================================
