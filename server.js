@@ -1304,16 +1304,26 @@ async function handleSlideImage(req, res, slideParams) {
     const slideImageData = await generateSlideImage(drive, fileId, parseInt(slideNumber));
 
     if (slideImageData) {
-      // Serve the image
+      // Serve the image with proper headers
       res.writeHead(200, {
-        'Content-Type': slideImageData.mimeType || 'image/png',
+        'Content-Type': slideImageData.mimeType || 'image/svg+xml',
         'Content-Length': slideImageData.data.length,
-        'Cache-Control': 'public, max-age=3600' // Cache for 1 hour
+        'Cache-Control': 'public, max-age=3600', // Cache for 1 hour
+        'X-Frame-Options': 'SAMEORIGIN', // Allow same-origin framing
+        'Access-Control-Allow-Origin': '*' // Allow cross-origin requests
       });
       res.end(slideImageData.data);
     } else {
-      // Return a placeholder image
-      sendJSON(res, 404, { error: 'Slide image not available' });
+      // Return a placeholder SVG
+      const customerName = req.headers.referer ?
+        decodeURIComponent(req.headers.referer.split('/').pop()) : 'Customer';
+      const placeholder = await createPlaceholderSlideImage(parseInt(slideNumber), customerName);
+      res.writeHead(200, {
+        'Content-Type': 'image/svg+xml',
+        'Content-Length': placeholder.data.length,
+        'Cache-Control': 'no-cache'
+      });
+      res.end(placeholder.data);
     }
 
   } catch (error) {
@@ -1363,6 +1373,7 @@ async function generateSlideImage(drive, fileId, slideNumber) {
     }
 
     // Method 2: Fallback to creating a placeholder image with slide info
+    console.log(`Using placeholder for slide ${slideNumber}`);
     return await createPlaceholderSlideImage(slideNumber);
 
   } catch (error) {
@@ -1380,19 +1391,43 @@ function streamToBuffer(stream) {
   });
 }
 
-async function createPlaceholderSlideImage(slideNumber) {
-  // Create a simple SVG placeholder for now
+async function createPlaceholderSlideImage(slideNumber, customerName = 'Customer') {
+  // Create a PowerPoint-style SVG placeholder
   const svgContent = `
-    <svg width="800" height="600" xmlns="http://www.w3.org/2000/svg">
-      <rect width="800" height="600" fill="#f8fafc" stroke="#e2e8f0" stroke-width="2"/>
-      <text x="400" y="280" text-anchor="middle" font-family="Arial" font-size="24" fill="#374151">
+    <svg width="1280" height="720" xmlns="http://www.w3.org/2000/svg">
+      <!-- Background -->
+      <rect width="1280" height="720" fill="#ffffff"/>
+
+      <!-- Blue header bar -->
+      <rect width="1280" height="80" fill="#4A90E2"/>
+
+      <!-- Customer title -->
+      <text x="60" y="140" font-family="Calibri, Arial, sans-serif" font-size="48" font-weight="bold" fill="#4A90E2">
+        ${customerName}
+      </text>
+
+      <!-- Subtitle -->
+      <text x="60" y="190" font-family="Calibri, Arial, sans-serif" font-size="18" fill="#2E8B57">
+        Customer Sentiment - Good
+      </text>
+
+      <!-- Content placeholder -->
+      <rect x="60" y="240" width="1160" height="400" fill="#F8F9FA" stroke="#E1E5E9" stroke-width="2" rx="8"/>
+
+      <!-- Content text -->
+      <text x="640" y="400" text-anchor="middle" font-family="Calibri, Arial, sans-serif" font-size="24" fill="#666666">
+        Slide ${slideNumber} - ${customerName} Details
+      </text>
+      <text x="640" y="440" text-anchor="middle" font-family="Calibri, Arial, sans-serif" font-size="16" fill="#888888">
+        PowerPoint content will appear here once image conversion is complete
+      </text>
+
+      <!-- Footer -->
+      <text x="60" y="690" font-family="Calibri, Arial, sans-serif" font-size="12" fill="#999999">
+        Confidential and Proprietary © Sycamore Informatics, Inc. 2026
+      </text>
+      <text x="1220" y="690" text-anchor="end" font-family="Calibri, Arial, sans-serif" font-size="12" fill="#999999">
         Slide ${slideNumber}
-      </text>
-      <text x="400" y="320" text-anchor="middle" font-family="Arial" font-size="16" fill="#6b7280">
-        PowerPoint Content
-      </text>
-      <text x="400" y="350" text-anchor="middle" font-family="Arial" font-size="12" fill="#9ca3af">
-        (Image conversion in progress)
       </text>
     </svg>
   `;

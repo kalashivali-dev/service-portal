@@ -933,16 +933,17 @@
       background: #ffffff;
       border-radius: 0 0 var(--radius) var(--radius);
       overflow: hidden;
+      min-height: 400px;
     }
-    .slide-image-frame {
+    .slide-image {
       width: 100%;
-      height: 600px;
+      max-width: 100%;
+      height: auto;
       border: none;
-      display: block;
       background: #ffffff;
     }
     .slide-image-fallback {
-      display: none;
+      /* Will be shown by default, hidden when image loads */
     }
 
     /* Fallback content when image doesn't load */
@@ -1837,13 +1838,15 @@ function renderCustomerFiles(data) {
             <div class="slide-match-info">${matchInfo}: "${slide.matchedPattern}"</div>
           </div>
           <div class="slide-image-container">
-            <iframe
+            <img
               src="${file.slideImageUrl}"
-              class="slide-image-frame"
-              title="Customer Slide - ${data.customerName}"
-              loading="lazy">
-            </iframe>
-            <div class="slide-image-fallback">
+              class="slide-image"
+              alt="Customer Slide - ${data.customerName}"
+              onload="this.style.display='block'; this.nextElementSibling.style.display='none';"
+              onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"
+              loading="lazy"
+              style="display: none;">
+            <div class="slide-image-fallback" style="display: block;">
               <div class="slide-visual-content">
                 <div class="slide-customer-title">${data.customerName}</div>
                 <div class="slide-info-text">
@@ -1851,6 +1854,7 @@ function renderCustomerFiles(data) {
                   <p><strong>File:</strong> ${file.fileName}</p>
                   <p><strong>Slide:</strong> ${slide.slideNumber} of ${file.totalSlides}</p>
                   <p><strong>Match:</strong> ${slide.matchedPattern}</p>
+                  <p><strong>Status:</strong> Loading slide image...</p>
                 </div>
                 <div class="slide-footer">
                   <span>📊 Customer Presentation Data</span>
