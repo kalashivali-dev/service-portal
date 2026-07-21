@@ -277,10 +277,16 @@ async function extractSlidesFromPowerPoint(drive, fileId, fileName) {
   try {
     console.log(`Extracting slides from PowerPoint: ${fileName}`);
 
-    // Download the PowerPoint file
-    const fileBuffer = await downloadFileFromDrive(drive, fileId);
+    // Method 1: Try to get slide thumbnails directly from Google Drive
+    const slideImages = await getSlideImagesFromDrive(drive, fileId, fileName);
+    if (slideImages.length > 0) {
+      console.log(`Extracted ${slideImages.length} slide images from ${fileName} via Drive API`);
+      return slideImages;
+    }
 
-    // Parse PowerPoint file (PPTX is a ZIP file)
+    // Method 2: Fallback to text extraction for slide identification
+    console.log(`Falling back to text extraction for ${fileName}`);
+    const fileBuffer = await downloadFileFromDrive(drive, fileId);
     const slides = await parsePowerPointSlides(fileBuffer);
 
     console.log(`Extracted ${slides.length} slides from ${fileName}`);
@@ -289,6 +295,61 @@ async function extractSlidesFromPowerPoint(drive, fileId, fileName) {
   } catch (error) {
     console.error(`Error extracting slides from ${fileName}:`, error.message);
     return [];
+  }
+}
+
+async function getSlideImagesFromDrive(drive, fileId, fileName) {
+  try {
+    console.log(`Getting slide images from Drive for: ${fileName}`);
+
+    // First, convert the PowerPoint to Google Slides format to get slide thumbnails
+    // This is a workaround since Drive API doesn't directly export PPT slide thumbnails
+
+    // Try to export as PDF first, then we can convert PDF pages to images
+    const pdfBuffer = await exportPowerPointAsPDF(drive, fileId);
+
+    if (pdfBuffer) {
+      // For now, we'll return a single image representing the presentation
+      // In a full implementation, you'd use a PDF-to-image library to extract individual pages
+      return [{
+        slideNumber: 1,
+        fileName: `${fileName}_preview`,
+        imageData: pdfBuffer,
+        format: 'pdf',
+        textContent: ['PowerPoint presentation'],
+        isPreview: true
+      }];
+    }
+
+    return [];
+  } catch (error) {
+    console.warn(`Could not get slide images for ${fileName}:`, error.message);
+    return [];
+  }
+}
+
+async function exportPowerPointAsPDF(drive, fileId) {
+  try {
+    // Try to export the PowerPoint file as PDF
+    const response = await drive.files.export({
+      fileId: fileId,
+      mimeType: 'application/pdf'
+    }, { responseType: 'stream' });
+
+    return new Promise((resolve, reject) => {
+      const chunks = [];
+
+      response.data.on('data', chunk => chunks.push(chunk));
+      response.data.on('end', () => {
+        const buffer = Buffer.concat(chunks);
+        resolve(buffer);
+      });
+      response.data.on('error', reject);
+    });
+
+  } catch (error) {
+    console.warn(`Could not export PowerPoint as PDF:`, error.message);
+    return null;
   }
 }
 
@@ -378,12 +439,15 @@ async function extractSlideContent(zipfile, entry) {
           const result = await parser.parseStringPromise(xmlContent);
 
           const slideNumber = entry.fileName.match(/slide(\d+)\.xml/)[1];
-          const textContent = extractTextFromSlideXML(result);
+          const extractedText = extractTextFromSlideXML(result);
 
           resolve({
             slideNumber: parseInt(slideNumber),
             fileName: entry.fileName,
-            textContent: textContent,
+            textContent: extractedText.allText,
+            title: extractedText.title,
+            possibleTitles: extractedText.possibleTitles,
+            hasTitle: !!extractedText.title,
             rawXml: xmlContent
           });
         } catch (error) {
@@ -399,14 +463,23 @@ async function extractSlideContent(zipfile, entry) {
 
 function extractTextFromSlideXML(xmlObject) {
   const textElements = [];
+  const slideTitle = [];
 
-  function traverse(obj) {
+  function traverse(obj, depth = 0) {
     if (typeof obj === 'string') {
-      textElements.push(obj);
+      const cleanText = obj.trim();
+      if (cleanText.length > 0 && cleanText.length < 200 && !cleanText.match(/^\s*$/) && !cleanText.match(/^[0-9\s\-\.]+$/)) {
+        textElements.push(cleanText);
+
+        // First few meaningful text elements are likely to be titles
+        if (slideTitle.length < 3 && cleanText.length > 2) {
+          slideTitle.push(cleanText);
+        }
+      }
     } else if (Array.isArray(obj)) {
-      obj.forEach(traverse);
+      obj.forEach(item => traverse(item, depth + 1));
     } else if (obj && typeof obj === 'object') {
-      Object.values(obj).forEach(traverse);
+      Object.values(obj).forEach(value => traverse(value, depth + 1));
     }
   }
 
@@ -415,15 +488,27 @@ function extractTextFromSlideXML(xmlObject) {
     traverse(xmlObject['p:sld']['p:cSld']);
   }
 
-  return textElements.filter(text =>
-    text.trim().length > 0 &&
-    !text.match(/^\s*$/) &&
-    text.length < 1000 // Filter out very long strings that are likely not titles
-  );
+  // Clean up text elements - remove formatting artifacts
+  const cleanedElements = textElements.filter(text => {
+    // Filter out common formatting strings
+    const formatStrings = ['Arial', 'Calibri', 'none', 'noStrike', 'solid', 'flat', 'ctr', 'en-US'];
+    const isFormatString = formatStrings.some(format => text.includes(format));
+    const isColor = text.match(/^[0-9A-F]{6}$/i);
+    const isNumber = text.match(/^[0-9]+$/);
+    const isShort = text.length < 3;
+
+    return !isFormatString && !isColor && !isNumber && !isShort;
+  });
+
+  return {
+    allText: cleanedElements,
+    title: slideTitle.length > 0 ? slideTitle[0] : null,
+    possibleTitles: slideTitle
+  };
 }
 
 function findCustomerSlide(slides, customerName) {
-  console.log(`Looking for slide containing customer: ${customerName}`);
+  console.log(`Looking for slide with title matching customer: ${customerName}`);
 
   const customerPatterns = {
     'AbbVie': ['abbvie', 'abb vie', 'abv'],
@@ -437,20 +522,66 @@ function findCustomerSlide(slides, customerName) {
 
   const patterns = customerPatterns[customerName] || [customerName.toLowerCase()];
 
+  // First priority: Look for slides where the title exactly matches the customer name
+  for (const slide of slides) {
+    if (slide.title) {
+      const titleLower = slide.title.toLowerCase().trim();
+
+      // Check if the title is exactly or closely matches the customer name
+      const isExactMatch = patterns.some(pattern => {
+        return titleLower === pattern.toLowerCase() ||
+               titleLower.includes(pattern.toLowerCase()) && titleLower.length < pattern.length + 10;
+      });
+
+      if (isExactMatch) {
+        console.log(`Found customer ${customerName} in slide ${slide.slideNumber} with title: "${slide.title}"`);
+        return {
+          ...slide,
+          customerName,
+          matchedPattern: slide.title,
+          matchType: 'title'
+        };
+      }
+    }
+  }
+
+  // Second priority: Look in possible titles
+  for (const slide of slides) {
+    for (const possibleTitle of slide.possibleTitles || []) {
+      const titleLower = possibleTitle.toLowerCase().trim();
+
+      const isMatch = patterns.some(pattern =>
+        titleLower === pattern.toLowerCase() ||
+        (titleLower.includes(pattern.toLowerCase()) && titleLower.length < pattern.length + 10)
+      );
+
+      if (isMatch) {
+        console.log(`Found customer ${customerName} in slide ${slide.slideNumber} with possible title: "${possibleTitle}"`);
+        return {
+          ...slide,
+          customerName,
+          matchedPattern: possibleTitle,
+          matchType: 'possibleTitle'
+        };
+      }
+    }
+  }
+
+  // Third priority: Look in all slide content (fallback)
   for (const slide of slides) {
     const slideText = slide.textContent.join(' ').toLowerCase();
 
-    // Check if any customer pattern matches the slide content
     const hasCustomerName = patterns.some(pattern =>
       slideText.includes(pattern.toLowerCase())
     );
 
     if (hasCustomerName) {
-      console.log(`Found customer ${customerName} in slide ${slide.slideNumber}`);
+      console.log(`Found customer ${customerName} in slide ${slide.slideNumber} content`);
       return {
         ...slide,
         customerName,
-        matchedPattern: patterns.find(p => slideText.includes(p.toLowerCase()))
+        matchedPattern: patterns.find(p => slideText.includes(p.toLowerCase())),
+        matchType: 'content'
       };
     }
   }
@@ -1127,6 +1258,32 @@ async function handleDriveDebug(req, res) {
   sendJSON(res, 200, debug);
 }
 
+// GET /api/slide-image/:fileId/:slideNumber — serve slide as image
+async function handleSlideImage(req, res, slideParams) {
+  const auth = resolveUser(req);
+  if (!auth) return sendJSON(res, 401, { error: 'Unauthorized' });
+
+  try {
+    const [fileId, slideNumber] = slideParams.split('/');
+
+    if (!fileId || !slideNumber) {
+      return sendJSON(res, 400, { error: 'Invalid parameters' });
+    }
+
+    // For now, return a placeholder response
+    // In a full implementation, this would serve the actual slide image
+    sendJSON(res, 200, {
+      message: 'Slide image endpoint - not yet implemented',
+      fileId,
+      slideNumber: parseInt(slideNumber)
+    });
+
+  } catch (error) {
+    console.error('Error serving slide image:', error);
+    sendJSON(res, 500, { error: 'Failed to serve slide image' });
+  }
+}
+
 // GET / — serve index.html (auth-gated)
 function handleIndex(req, res) {
   const auth = resolveUser(req);
@@ -1178,6 +1335,10 @@ async function requestHandler(req, res) {
     if (pathname === '/logout') return handleLogout(req, res);
     if (pathname === '/healthz') return handleHealthz(req, res);
     if (pathname === '/api/drive-debug') return await handleDriveDebug(req, res);
+    if (pathname.startsWith('/api/slide-image/')) {
+      const slideParams = pathname.slice('/api/slide-image/'.length);
+      return await handleSlideImage(req, res, slideParams);
+    }
     if (pathname === '/api/me') return handleApiMe(req, res);
     if (pathname === '/api/cases') return handleApiCases(req, res);
     if (pathname === '/api/stats') return handleApiStats(req, res);
