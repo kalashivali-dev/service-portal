@@ -83,14 +83,22 @@ async function getDriveAuth() {
   if (driveAuth) return driveAuth;
 
   try {
+    console.log('Initializing Google Drive auth with scopes:', DRIVE_SCOPES);
+
     // Use Application Default Credentials (ADC) in Cloud Run
     driveAuth = new google.auth.GoogleAuth({
       scopes: DRIVE_SCOPES,
     });
+
+    // Test the auth by getting credentials
+    const authClient = await driveAuth.getClient();
+    console.log('Google Drive auth initialized successfully');
+
     return driveAuth;
   } catch (error) {
-    console.error('Failed to initialize Google Drive auth:', error);
-    throw error;
+    console.error('Failed to initialize Google Drive auth:', error.message);
+    console.error('Error details:', error);
+    throw new Error(`Drive auth failed: ${error.message}`);
   }
 }
 
@@ -108,13 +116,31 @@ const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 async function getCustomerDataFromDrive() {
   const now = Date.now();
   if (customerDataCache && (now - lastCacheUpdate) < CACHE_TTL) {
+    console.log('Returning cached customer data');
     return customerDataCache;
   }
 
   try {
+    console.log(`Fetching customer data from Drive folder: ${DRIVE_FOLDER_ID}`);
     const drive = await getDriveService();
 
+    // First, let's test if we can access the folder
+    try {
+      const folderTest = await drive.files.get({
+        fileId: DRIVE_FOLDER_ID,
+        fields: 'id, name, permissions'
+      });
+      console.log('Successfully accessed Drive folder:', folderTest.data.name);
+    } catch (folderError) {
+      console.error('Cannot access Drive folder:', folderError.message);
+      if (folderError.code === 403) {
+        throw new Error('Access denied to Drive folder. Check service account permissions.');
+      }
+      throw new Error(`Drive folder access failed: ${folderError.message}`);
+    }
+
     // List all PowerPoint files in the folder
+    console.log('Listing files in Drive folder...');
     const filesResponse = await drive.files.list({
       q: `'${DRIVE_FOLDER_ID}' in parents and (mimeType='application/vnd.ms-powerpoint' or mimeType='application/vnd.openxmlformats-officedocument.presentationml.presentation')`,
       fields: 'files(id, name, createdTime, modifiedTime)',
@@ -122,11 +148,15 @@ async function getCustomerDataFromDrive() {
     });
 
     const files = filesResponse.data.files || [];
+    console.log(`Found ${files.length} PowerPoint files in Drive folder`);
+
     const customerData = {};
 
     // Process each PowerPoint file
     for (const file of files) {
       try {
+        console.log(`Processing file: ${file.name}`);
+
         // Extract date/week info from filename if possible
         const dateMatch = file.name.match(/(\d{4}-\d{2}-\d{2})|(\d{1,2}[-\/]\d{1,2}[-\/]\d{2,4})|Week\s*(\d+)/i);
 
@@ -142,6 +172,7 @@ async function getCustomerDataFromDrive() {
 
         // Try to extract customer names from filename or you could map based on patterns
         const customers = extractCustomerNamesFromFileName(file.name);
+        console.log(`File ${file.name} mapped to customers:`, customers);
 
         customers.forEach(customer => {
           if (!customerData[customer]) {
@@ -155,12 +186,14 @@ async function getCustomerDataFromDrive() {
       }
     }
 
+    console.log('Customer data processed successfully:', Object.keys(customerData));
     customerDataCache = customerData;
     lastCacheUpdate = now;
     return customerData;
 
   } catch (error) {
-    console.error('Error fetching customer data from Drive:', error);
+    console.error('Error fetching customer data from Drive:', error.message);
+    console.error('Full error:', error);
     throw error;
   }
 }
@@ -666,7 +699,17 @@ async function handleApiCustomers(req, res) {
     sendJSON(res, 200, { customers });
   } catch (error) {
     console.error('Error fetching customers:', error);
-    sendJSON(res, 500, { error: 'Failed to fetch customer data' });
+
+    // Return fallback data structure to prevent frontend errors
+    const fallbackCustomers = ['AbbVie', 'Alcon', 'Ascendis', 'BMS', 'Otsuka', 'PMI', 'Zealand'];
+    const customers = fallbackCustomers.map(name => ({
+      name,
+      dataCount: 0,
+      lastUpdated: Date.now(),
+      error: true
+    }));
+
+    sendJSON(res, 200, { customers, warning: 'Drive API unavailable, showing fallback data' });
   }
 }
 
@@ -680,7 +723,12 @@ async function handleApiCustomerDetails(req, res, customerName) {
     const decodedCustomerName = decodeURIComponent(customerName);
 
     if (!customerData[decodedCustomerName]) {
-      return sendJSON(res, 404, { error: 'Customer not found' });
+      return sendJSON(res, 200, {
+        customerName: decodedCustomerName,
+        files: [],
+        totalFiles: 0,
+        message: 'No files found for this customer'
+      });
     }
 
     const data = customerData[decodedCustomerName];
@@ -695,7 +743,15 @@ async function handleApiCustomerDetails(req, res, customerName) {
     });
   } catch (error) {
     console.error(`Error fetching data for customer ${customerName}:`, error);
-    sendJSON(res, 500, { error: 'Failed to fetch customer details' });
+
+    // Return empty state instead of 500 error
+    sendJSON(res, 200, {
+      customerName: decodeURIComponent(customerName),
+      files: [],
+      totalFiles: 0,
+      error: true,
+      message: `Drive API unavailable: ${error.message}`
+    });
   }
 }
 
