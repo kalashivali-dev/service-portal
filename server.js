@@ -570,6 +570,7 @@ function organizeSlideContent(textArray) {
 
 function findCustomerSlide(slides, customerName) {
   console.log(`Looking for slide with title matching customer: ${customerName}`);
+  console.log(`Total slides to search: ${slides.length}`);
 
   const customerPatterns = {
     'AbbVie': ['abbvie', 'abb vie', 'abv'],
@@ -582,6 +583,12 @@ function findCustomerSlide(slides, customerName) {
   };
 
   const patterns = customerPatterns[customerName] || [customerName.toLowerCase()];
+  console.log(`Searching for patterns: [${patterns.join(', ')}]`);
+
+  // Log all slide titles for debugging
+  slides.forEach(slide => {
+    console.log(`Slide ${slide.slideNumber}: title="${slide.title || 'NO TITLE'}", possibleTitles=[${(slide.possibleTitles || []).join(', ')}], textSample="${slide.textContent?.slice(0, 3).join(' | ') || 'NO TEXT'}"`);
+  });
 
   // First priority: Look for slides where the title exactly matches the customer name
   for (const slide of slides) {
@@ -590,12 +597,16 @@ function findCustomerSlide(slides, customerName) {
 
       // Check if the title is exactly or closely matches the customer name
       const isExactMatch = patterns.some(pattern => {
-        return titleLower === pattern.toLowerCase() ||
-               titleLower.includes(pattern.toLowerCase()) && titleLower.length < pattern.length + 10;
+        const match = titleLower === pattern.toLowerCase() ||
+               (titleLower.includes(pattern.toLowerCase()) && titleLower.length < pattern.length + 10);
+        if (match) {
+          console.log(`EXACT TITLE MATCH: "${slide.title}" matches pattern "${pattern}" for ${customerName}`);
+        }
+        return match;
       });
 
       if (isExactMatch) {
-        console.log(`Found customer ${customerName} in slide ${slide.slideNumber} with title: "${slide.title}"`);
+        console.log(`✅ Found customer ${customerName} in slide ${slide.slideNumber} with title: "${slide.title}"`);
         return {
           ...slide,
           customerName,
@@ -611,13 +622,17 @@ function findCustomerSlide(slides, customerName) {
     for (const possibleTitle of slide.possibleTitles || []) {
       const titleLower = possibleTitle.toLowerCase().trim();
 
-      const isMatch = patterns.some(pattern =>
-        titleLower === pattern.toLowerCase() ||
-        (titleLower.includes(pattern.toLowerCase()) && titleLower.length < pattern.length + 10)
-      );
+      const isMatch = patterns.some(pattern => {
+        const match = titleLower === pattern.toLowerCase() ||
+               (titleLower.includes(pattern.toLowerCase()) && titleLower.length < pattern.length + 10);
+        if (match) {
+          console.log(`POSSIBLE TITLE MATCH: "${possibleTitle}" matches pattern "${pattern}" for ${customerName}`);
+        }
+        return match;
+      });
 
       if (isMatch) {
-        console.log(`Found customer ${customerName} in slide ${slide.slideNumber} with possible title: "${possibleTitle}"`);
+        console.log(`✅ Found customer ${customerName} in slide ${slide.slideNumber} with possible title: "${possibleTitle}"`);
         return {
           ...slide,
           customerName,
@@ -628,32 +643,40 @@ function findCustomerSlide(slides, customerName) {
     }
   }
 
-  // Third priority: Look in all slide content (fallback)
+  // Third priority: Look in all slide content (fallback) - but be more strict
   for (const slide of slides) {
-    const slideText = slide.textContent.join(' ').toLowerCase();
+    const slideText = slide.textContent?.join(' ').toLowerCase() || '';
 
-    const hasCustomerName = patterns.some(pattern =>
-      slideText.includes(pattern.toLowerCase())
-    );
+    const hasCustomerName = patterns.some(pattern => {
+      // Look for the customer name in the first few elements (more likely to be titles/headers)
+      const firstText = slide.textContent?.slice(0, 5).join(' ').toLowerCase() || '';
+      const inFirstText = firstText.includes(pattern.toLowerCase());
+
+      if (inFirstText) {
+        console.log(`CONTENT MATCH IN FIRST TEXT: "${pattern}" found in "${firstText}" for ${customerName}`);
+        return true;
+      }
+      return false;
+    });
 
     if (hasCustomerName) {
-      console.log(`Found customer ${customerName} in slide ${slide.slideNumber} content`);
+      console.log(`✅ Found customer ${customerName} in slide ${slide.slideNumber} content`);
       return {
         ...slide,
         customerName,
-        matchedPattern: patterns.find(p => slideText.includes(p.toLowerCase())),
+        matchedPattern: patterns.find(p => slide.textContent?.slice(0, 5).join(' ').toLowerCase().includes(p.toLowerCase())),
         matchType: 'content'
       };
     }
   }
 
-  console.log(`No slide found for customer ${customerName}`);
+  console.log(`❌ No slide found for customer ${customerName}`);
   return null;
 }
 
 function extractCustomerNamesFromFileName(fileName) {
   // List of known customers - you can expand this based on your needs
-  const knownCustomers = ['AbbVie', 'Alcon', 'Ascendis', 'BMS', 'Otsuka', 'PMI', 'Zealand'];
+  const knownCustomers = ['AbbVie', 'Alcon', 'Ascendis', 'BMS', 'Otsuka', 'PMI', 'Zealand', 'CSL', 'Genmab', 'Takeda', 'Vertex', 'Denali'];
 
   const foundCustomers = [];
   const lowerFileName = fileName.toLowerCase();
@@ -666,7 +689,12 @@ function extractCustomerNamesFromFileName(fileName) {
     'BMS': ['bms', 'bristol', 'myers', 'bristol-myers', 'bristol myers squibb'],
     'Otsuka': ['otsuka', 'otsu'],
     'PMI': ['pmi', 'philip morris'],
-    'Zealand': ['zealand', 'zeal']
+    'Zealand': ['zealand', 'zeal'],
+    'CSL': ['csl', 'csl limited', 'csl behring'],
+    'Genmab': ['genmab', 'gen mab'],
+    'Takeda': ['takeda', 'takeda pharmaceutical'],
+    'Vertex': ['vertex', 'vertex pharmaceuticals'],
+    'Denali': ['denali', 'denali therapeutics']
   };
 
   // Check each customer against their patterns

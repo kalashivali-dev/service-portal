@@ -1052,6 +1052,187 @@
       font-style: italic;
     }
 
+    /* PowerPoint-style layout */
+    .powerpoint-sentiment {
+      margin-bottom: 16px;
+      font-size: 16px;
+    }
+    .sentiment-label {
+      color: #4A90E2;
+      font-weight: 500;
+    }
+    .sentiment-value.good {
+      background: #22c55e;
+      color: white;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+    .sentiment-value.poor {
+      background: #ef4444;
+      color: white;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+    .sentiment-description {
+      font-size: 14px;
+      color: #666;
+      margin-top: 4px;
+    }
+
+    .powerpoint-team {
+      background: #2d3748;
+      color: white;
+      padding: 12px 16px;
+      margin: 16px 0;
+      font-size: 14px;
+      font-weight: 500;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    [data-theme="dark"] .powerpoint-team {
+      background: #1a202c;
+    }
+
+    .powerpoint-tabs {
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      background: white;
+      overflow: hidden;
+    }
+    [data-theme="dark"] .powerpoint-tabs {
+      background: var(--bg-surface);
+      border-color: var(--border);
+    }
+
+    .powerpoint-tab-header {
+      display: flex;
+      background: #f8fafc;
+      border-bottom: 1px solid #e2e8f0;
+      overflow-x: auto;
+    }
+    [data-theme="dark"] .powerpoint-tab-header {
+      background: var(--bg-surface2);
+      border-bottom-color: var(--border);
+    }
+
+    .powerpoint-tab-btn {
+      background: none;
+      border: none;
+      padding: 12px 16px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #64748b;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .powerpoint-tab-btn:hover {
+      color: #4A90E2;
+      background: rgba(74, 144, 226, 0.05);
+    }
+    .powerpoint-tab-btn.active {
+      color: #4A90E2;
+      border-bottom-color: #4A90E2;
+      background: white;
+    }
+    [data-theme="dark"] .powerpoint-tab-btn {
+      color: var(--text-secondary);
+    }
+    [data-theme="dark"] .powerpoint-tab-btn.active {
+      background: var(--bg-surface);
+      color: #60a5fa;
+      border-bottom-color: #60a5fa;
+    }
+
+    .powerpoint-tab-content {
+      padding: 20px;
+    }
+
+    .powerpoint-tab-panel {
+      display: none;
+    }
+    .powerpoint-tab-panel.active {
+      display: block;
+    }
+
+    .powerpoint-section-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+    }
+
+    .powerpoint-info-box {
+      border: 1px solid #d1d5db;
+      padding: 16px;
+      border-radius: 6px;
+    }
+    .powerpoint-info-box h4 {
+      font-size: 14px;
+      font-weight: 600;
+      color: #4A90E2;
+      margin: 0 0 8px 0;
+      padding-bottom: 4px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    [data-theme="dark"] .powerpoint-info-box {
+      border-color: var(--border);
+    }
+    [data-theme="dark"] .powerpoint-info-box h4 {
+      color: #60a5fa;
+      border-bottom-color: var(--border);
+    }
+
+    .powerpoint-activity {
+      margin-bottom: 16px;
+      padding: 12px;
+      background: #f0f9ff;
+      border-left: 4px solid #4A90E2;
+      border-radius: 0 4px 4px 0;
+    }
+    .activity-title {
+      font-weight: 600;
+      color: #1e40af;
+      margin-bottom: 4px;
+    }
+    .activity-description {
+      font-size: 14px;
+      line-height: 1.4;
+    }
+    [data-theme="dark"] .powerpoint-activity {
+      background: rgba(96, 165, 250, 0.1);
+    }
+    [data-theme="dark"] .activity-title {
+      color: #60a5fa;
+    }
+
+    .powerpoint-accomplishment {
+      padding: 12px;
+      background: #f0fdf4;
+      border-left: 4px solid #22c55e;
+      border-radius: 0 4px 4px 0;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+    [data-theme="dark"] .powerpoint-accomplishment {
+      background: rgba(34, 197, 94, 0.1);
+    }
+
+    .powerpoint-alert {
+      padding: 12px;
+      background: #fef2f2;
+      border-left: 4px solid #ef4444;
+      border-radius: 0 4px 4px 0;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+    [data-theme="dark"] .powerpoint-alert {
+      background: rgba(239, 68, 68, 0.1);
+    }
+
     .slide-content-sections {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -1215,6 +1396,26 @@
       <a class="nav-link" data-page="customer" data-customer="Zealand" href="#customer/Zealand">
         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
         Zealand
+      </a>
+      <a class="nav-link" data-page="customer" data-customer="CSL" href="#customer/CSL">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        CSL
+      </a>
+      <a class="nav-link" data-page="customer" data-customer="Genmab" href="#customer/Genmab">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Genmab
+      </a>
+      <a class="nav-link" data-page="customer" data-customer="Takeda" href="#customer/Takeda">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Takeda
+      </a>
+      <a class="nav-link" data-page="customer" data-customer="Vertex" href="#customer/Vertex">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Vertex
+      </a>
+      <a class="nav-link" data-page="customer" data-customer="Denali" href="#customer/Denali">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Denali
       </a>
     </div>
 
@@ -2010,7 +2211,7 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
-// Function to render all slide content in structured format
+// Function to render all slide content in PowerPoint tabbed format
 function renderAllSlideContent(slide, customerName) {
   const slideText = Array.isArray(slide.textContent) ? slide.textContent : [];
 
@@ -2018,81 +2219,107 @@ function renderAllSlideContent(slide, customerName) {
     return '<div class="slide-no-content">No content extracted from this slide.</div>';
   }
 
-  // Organize content into meaningful sections
-  const organizedContent = organizeSlideContentForDisplay(slideText, customerName);
+  // Organize content into PowerPoint-style sections
+  const organizedContent = organizePowerPointSections(slideText, customerName);
 
-  let contentHtml = '';
+  return `
+    <!-- Customer Sentiment -->
+    <div class="powerpoint-sentiment">
+      <span class="sentiment-label">Customer Sentiment - </span>
+      <span class="sentiment-value ${organizedContent.sentiment.status}">${organizedContent.sentiment.value}</span>
+      <div class="sentiment-description">${organizedContent.sentiment.description}</div>
+    </div>
 
-  // Customer Information Section
-  if (organizedContent.customerInfo.length > 0) {
-    contentHtml += `
-      <div class="slide-section">
-        <h3 class="slide-section-title">Customer Information</h3>
-        <div class="slide-section-content">
-          ${organizedContent.customerInfo.map(text => `<div class="slide-content-item">${escapeHtml(text)}</div>`).join('')}
+    <!-- Team Members -->
+    <div class="powerpoint-team">
+      ${organizedContent.team.map(member => `<span class="team-member">${escapeHtml(member)}</span>`).join('')}
+    </div>
+
+    <!-- PowerPoint Tabs -->
+    <div class="powerpoint-tabs">
+      <div class="powerpoint-tab-header">
+        <button class="powerpoint-tab-btn active" data-tab="key-info">Key Customer Information</button>
+        <button class="powerpoint-tab-btn" data-tab="current-activities">Current Key Activities & Projects</button>
+        <button class="powerpoint-tab-btn" data-tab="additional-activities">Additional Activities & Projects</button>
+        <button class="powerpoint-tab-btn" data-tab="accomplishments">Key Accomplishments</button>
+        <button class="powerpoint-tab-btn" data-tab="alerts">Management Alerts & Risks</button>
+      </div>
+
+      <div class="powerpoint-tab-content">
+        <!-- Key Customer Information -->
+        <div class="powerpoint-tab-panel active" id="key-info">
+          <div class="powerpoint-section-grid">
+            <div class="powerpoint-info-box">
+              <h4>Volume of Tickets</h4>
+              ${organizedContent.keyInfo.tickets.map(text => `<div>${escapeHtml(text)}</div>`).join('')}
+            </div>
+            <div class="powerpoint-info-box">
+              <h4>Total User License</h4>
+              ${organizedContent.keyInfo.licenses.map(text => `<div>${escapeHtml(text)}</div>`).join('')}
+            </div>
+            <div class="powerpoint-info-box">
+              <h4>Contract Elements</h4>
+              ${organizedContent.keyInfo.contract.map(text => `<div>${escapeHtml(text)}</div>`).join('')}
+            </div>
+            <div class="powerpoint-info-box">
+              <h4>Products & Integrations</h4>
+              ${organizedContent.keyInfo.products.map(text => `<div>${escapeHtml(text)}</div>`).join('')}
+            </div>
+          </div>
+        </div>
+
+        <!-- Current Activities -->
+        <div class="powerpoint-tab-panel" id="current-activities">
+          ${organizedContent.currentActivities.map(activity => `
+            <div class="powerpoint-activity">
+              <div class="activity-title">${escapeHtml(activity.title)}</div>
+              <div class="activity-description">${escapeHtml(activity.description)}</div>
+            </div>
+          `).join('')}
+        </div>
+
+        <!-- Additional Activities -->
+        <div class="powerpoint-tab-panel" id="additional-activities">
+          ${organizedContent.additionalActivities.map(activity => `
+            <div class="powerpoint-activity">
+              <div class="activity-title">${escapeHtml(activity.title)}</div>
+              <div class="activity-description">${escapeHtml(activity.description)}</div>
+            </div>
+          `).join('')}
+        </div>
+
+        <!-- Accomplishments -->
+        <div class="powerpoint-tab-panel" id="accomplishments">
+          ${organizedContent.accomplishments.map(item => `
+            <div class="powerpoint-accomplishment">
+              ${escapeHtml(item)}
+            </div>
+          `).join('')}
+        </div>
+
+        <!-- Alerts & Risks -->
+        <div class="powerpoint-tab-panel" id="alerts">
+          ${organizedContent.alerts.map(alert => `
+            <div class="powerpoint-alert">
+              ${escapeHtml(alert)}
+            </div>
+          `).join('')}
         </div>
       </div>
-    `;
-  }
-
-  // Key Metrics Section
-  if (organizedContent.metrics.length > 0) {
-    contentHtml += `
-      <div class="slide-section">
-        <h3 class="slide-section-title">Key Metrics & Data</h3>
-        <div class="slide-section-grid">
-          ${organizedContent.metrics.map(text => `<div class="slide-metric-item">${escapeHtml(text)}</div>`).join('')}
-        </div>
-      </div>
-    `;
-  }
-
-  // Activities & Projects Section
-  if (organizedContent.activities.length > 0) {
-    contentHtml += `
-      <div class="slide-section">
-        <h3 class="slide-section-title">Current Activities & Projects</h3>
-        <div class="slide-section-content">
-          ${organizedContent.activities.map(text => `<div class="slide-content-item">${escapeHtml(text)}</div>`).join('')}
-        </div>
-      </div>
-    `;
-  }
-
-  // All Other Content
-  if (organizedContent.other.length > 0) {
-    contentHtml += `
-      <div class="slide-section">
-        <h3 class="slide-section-title">Additional Information</h3>
-        <div class="slide-section-content">
-          ${organizedContent.other.map(text => `<div class="slide-content-item">${escapeHtml(text)}</div>`).join('')}
-        </div>
-      </div>
-    `;
-  }
-
-  // If we couldn't organize it well, show everything
-  if (!contentHtml) {
-    contentHtml = `
-      <div class="slide-section">
-        <h3 class="slide-section-title">Complete Slide Content</h3>
-        <div class="slide-section-content">
-          ${slideText.map(text => `<div class="slide-content-item">${escapeHtml(text)}</div>`).join('')}
-        </div>
-      </div>
-    `;
-  }
-
-  return contentHtml;
+    </div>
+  `;
 }
 
-// Function to organize slide content for display
-function organizeSlideContentForDisplay(textArray, customerName) {
+// Function to organize content into PowerPoint-style sections
+function organizePowerPointSections(textArray, customerName) {
   const content = {
-    customerInfo: [],
-    metrics: [],
-    activities: [],
-    other: []
+    sentiment: { value: 'Good', status: 'good', description: '' },
+    team: [],
+    keyInfo: { tickets: [], licenses: [], contract: [], products: [] },
+    currentActivities: [],
+    additionalActivities: [],
+    accomplishments: [],
+    alerts: []
   };
 
   textArray.forEach(text => {
@@ -2100,37 +2327,69 @@ function organizeSlideContentForDisplay(textArray, customerName) {
 
     const lowerText = text.toLowerCase();
 
-    // Customer information
-    if (lowerText.includes('customer') || lowerText.includes('sentiment') || lowerText.includes('status') ||
-        lowerText.includes('information') || lowerText.includes('csm:') || lowerText.includes('tam:') ||
-        lowerText.includes('lead support') || lowerText.includes('lead ba')) {
-      content.customerInfo.push(text);
+    // Customer sentiment
+    if (lowerText.includes('sentiment') || lowerText.includes('satisfied') || lowerText.includes('customer is')) {
+      if (lowerText.includes('good')) content.sentiment = { value: 'Good', status: 'good', description: text };
+      else if (lowerText.includes('bad')) content.sentiment = { value: 'Poor', status: 'poor', description: text };
+      else content.sentiment.description = text;
     }
-    // Metrics and numbers
-    else if ((lowerText.includes('ticket') && text.match(/\d/)) ||
-             (lowerText.includes('license') && text.match(/\d/)) ||
-             (lowerText.includes('sow') && text.match(/\d/)) ||
-             lowerText.includes('volume') || lowerText.includes('total') ||
-             lowerText.includes('critical') || lowerText.includes('high') ||
-             lowerText.match(/^\d+/) || lowerText.includes('cumulative')) {
-      content.metrics.push(text);
+    // Team members (CSM, TAM, etc.)
+    else if (lowerText.includes('csm:') || lowerText.includes('tam:') || lowerText.includes('lead support:') || lowerText.includes('lead ba:')) {
+      content.team.push(text);
     }
-    // Activities and projects
-    else if (lowerText.includes('activity') || lowerText.includes('project') ||
-             lowerText.includes('demo') || lowerText.includes('meeting') ||
-             lowerText.includes('poc') || lowerText.includes('upgrade') ||
-             lowerText.includes('assignment') || lowerText.includes('accomplishment') ||
-             lowerText.includes('current key') || lowerText.includes('future') ||
-             lowerText.includes('alert') || lowerText.includes('risk')) {
-      content.activities.push(text);
+    // Tickets
+    else if (lowerText.includes('ticket') || lowerText.includes('critical') || lowerText.includes('volume')) {
+      content.keyInfo.tickets.push(text);
     }
-    // Everything else that's meaningful
-    else if (text.length > 3) {
-      content.other.push(text);
+    // Licenses
+    else if (lowerText.includes('license') || lowerText.includes('full') || lowerText.includes('read only') || lowerText.includes('sow')) {
+      content.keyInfo.licenses.push(text);
+    }
+    // Contract elements
+    else if (lowerText.includes('contract') || lowerText.includes('tbd') || lowerText.includes('data volume') || lowerText.includes('sla')) {
+      content.keyInfo.contract.push(text);
+    }
+    // Products and integrations
+    else if (lowerText.includes('product') || lowerText.includes('integration') || lowerText.includes('sce') || lowerText.includes('odr') || lowerText.includes('wde') || lowerText.includes('pinnacle') || lowerText.includes('cosmos')) {
+      content.keyInfo.products.push(text);
+    }
+    // Current activities
+    else if (lowerText.includes('demo') || lowerText.includes('poc') || lowerText.includes('meeting') || lowerText.includes('upgrade') || lowerText.includes('activity')) {
+      content.currentActivities.push({ title: text.split('.')[0] || text.substring(0, 50), description: text });
+    }
+    // Accomplishments
+    else if (lowerText.includes('congrats') || lowerText.includes('successfully') || lowerText.includes('completed') || lowerText.includes('accomplishment')) {
+      content.accomplishments.push(text);
+    }
+    // Alerts and risks
+    else if (lowerText.includes('alert') || lowerText.includes('risk') || lowerText.includes('issue') || lowerText.includes('latency') || lowerText.includes('problem')) {
+      content.alerts.push(text);
+    }
+    // Additional activities (future activities)
+    else if (lowerText.includes('governance') || lowerText.includes('project plan') || lowerText.includes('face to face') || lowerText.includes('roadmap') || lowerText.includes('endpoint') || lowerText.includes('sharing')) {
+      content.additionalActivities.push({ title: text.split('.')[0] || text.substring(0, 50), description: text });
     }
   });
 
   return content;
+}
+
+// Tab functionality
+function initializePowerPointTabs() {
+  document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('powerpoint-tab-btn')) {
+      const targetTab = e.target.getAttribute('data-tab');
+      const tabContainer = e.target.closest('.powerpoint-tabs');
+
+      // Remove active class from all tabs and panels in this container
+      tabContainer.querySelectorAll('.powerpoint-tab-btn').forEach(btn => btn.classList.remove('active'));
+      tabContainer.querySelectorAll('.powerpoint-tab-panel').forEach(panel => panel.classList.remove('active'));
+
+      // Add active class to clicked tab and corresponding panel
+      e.target.classList.add('active');
+      tabContainer.querySelector(`#${targetTab}`).classList.add('active');
+    }
+  });
 }
 
 // =============================================================================
