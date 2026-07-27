@@ -1678,6 +1678,88 @@
       color: var(--text-muted);
     }
 
+    /* Customer Cards Section */
+    .customer-cards-section {
+      margin-bottom: 32px;
+    }
+
+    .section-header {
+      margin-bottom: 20px;
+    }
+
+    .section-header h3 {
+      color: var(--text-primary);
+      font-size: 20px;
+      font-weight: 600;
+      margin: 0;
+    }
+
+    .customer-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+    }
+
+    .customer-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      cursor: pointer;
+      transition: all var(--transition);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .customer-card:hover {
+      border-color: var(--border-light);
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+    }
+
+    .customer-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+
+    .customer-card-name {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin: 0;
+    }
+
+    .customer-card-sentiment {
+      padding: 4px 8px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .sentiment-positive {
+      background: var(--status-done-bg);
+      color: var(--status-done-txt);
+    }
+
+    .sentiment-neutral {
+      background: var(--status-prog-bg);
+      color: var(--status-prog-txt);
+    }
+
+    .sentiment-negative {
+      background: var(--p1-bg);
+      color: var(--p1-txt);
+    }
+
+    .customer-card-description {
+      color: var(--text-secondary);
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
     @media (max-width: 768px) {
       .admin-stats-grid {
         grid-template-columns: repeat(2, 1fr);
@@ -1695,6 +1777,10 @@
         flex-direction: column;
         align-items: stretch;
         gap: 16px;
+      }
+
+      .customer-cards-grid {
+        grid-template-columns: 1fr;
       }
     }
   </style>
@@ -1746,10 +1832,6 @@
         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
         Wiki
       </a>
-      <a class="nav-link" data-page="admin" href="#admin" id="admin-nav-link" style="display: none;">
-        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 15a3 3 0 003-3.5A2 2 0 0117 9V7a1 1 0 00-1-1H8a1 1 0 00-1 1v2a2 2 0 002 2.5A3 3 0 0012 15z"/><path d="M3 21h18"/><path d="M5 21V7l4-4h6l4 4v14"/></svg>
-        Admin
-      </a>
 
       <div class="nav-section-label" style="margin-top:12px;">Customers</div>
       <a class="nav-link" data-page="customer" data-customer="AbbVie" href="#customer/AbbVie">
@@ -1800,6 +1882,14 @@
         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
         Denali
       </a>
+
+      <!-- Admin Link -->
+      <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border);">
+        <a class="nav-link" data-page="admin" href="#admin" id="admin-nav-link" style="display: none; background: var(--status-done-bg); color: var(--status-done-txt); border-radius: var(--radius-sm);">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 15a3 3 0 003-3.5A2 2 0 0117 9V7a1 1 0 00-1-1H8a1 1 0 00-1 1v2a2 2 0 002 2.5A3 3 0 0012 15z"/><path d="M3 21h18"/><path d="M5 21V7l4-4h6l4 4v14"/></svg>
+          ADMIN
+        </a>
+      </div>
     </div>
 
     <div class="sidebar-footer">
@@ -1849,34 +1939,9 @@
       <!-- ===== DASHBOARD ===== -->
       <section class="page active" id="page-dashboard">
 
-        <!-- Welcome Hero -->
-        <div class="welcome-hero">
-          <div class="welcome-greeting">Sycamore Informatics · Service Org</div>
-          <div class="welcome-title">Welcome to the Services Dashboard</div>
-          <div class="welcome-sub">Your central hub for service operations — track cases, manage staff, and access the team knowledge base.</div>
-          <div class="welcome-badges">
-            <div class="welcome-badge">
-              <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-              Live Operations
-            </div>
-            <div class="welcome-badge">
-              <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-              Real-time Updates
-            </div>
-            <div class="welcome-badge">
-              <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
-              Staff Management
-            </div>
-            <div class="welcome-badge">
-              <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
-              Knowledge Wiki
-            </div>
-          </div>
-        </div>
-
         <div class="page-header">
-          <h2>Operations Overview</h2>
-          <p>Real-time summary of service cases and team activity.</p>
+          <h2>Dashboard</h2>
+          <p>Customer overview and service operations summary</p>
         </div>
 
         <div class="stats-grid" id="stats-grid">
@@ -1911,6 +1976,16 @@
               <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
             </div>
             <div class="stat-sub">Active team members</div>
+          </div>
+        </div>
+
+        <!-- Customer Cards Section -->
+        <div class="customer-cards-section">
+          <div class="section-header">
+            <h3>Customers</h3>
+          </div>
+          <div class="customer-cards-grid" id="customer-cards-grid">
+            <!-- Customer cards will be populated by JavaScript -->
           </div>
         </div>
 
@@ -2108,7 +2183,7 @@
 
         <!-- Week Selection Dropdown -->
         <div class="week-selector" id="week-selector" style="display: none;">
-          <label for="week-dropdown" class="week-label">Select Week:</label>
+          <label for="week-dropdown" class="week-label">Select End of week date:</label>
           <select id="week-dropdown" class="week-dropdown">
             <!-- Options populated by JavaScript -->
           </select>
@@ -2401,8 +2476,9 @@ async function loadStats() {
       document.getElementById('customers-with-tickets').textContent = stats.metrics?.customersWithTickets || 0;
     }
 
-    // Load role details
+    // Load role details and customer cards
     loadRoleDetails();
+    loadCustomerCards();
 
   } catch (e) {
     console.error('Failed to load stats', e);
@@ -2439,6 +2515,56 @@ async function loadRoleDetails() {
   } catch (e) {
     console.error('Failed to load role details', e);
   }
+}
+
+// Load customer cards for dashboard
+async function loadCustomerCards() {
+  try {
+    const res = await fetch('/api/customers');
+    if (!res.ok) return;
+
+    const data = await res.json();
+    const customers = data.customers || [];
+
+    const customerCardsGrid = document.getElementById('customer-cards-grid');
+    if (!customerCardsGrid) return;
+
+    // Create customer cards with the top customers
+    const topCustomers = customers.slice(0, 6); // Show top 6 customers
+
+    customerCardsGrid.innerHTML = topCustomers.map(customer => {
+      const sentimentClass = customer.sentiment || 'neutral';
+      const sentimentText = customer.sentiment ?
+        customer.sentiment.charAt(0).toUpperCase() + customer.sentiment.slice(1) : 'Neutral';
+
+      // Create description based on available data
+      let description = `Customer sentiment: ${sentimentText}`;
+      if (customer.openTickets !== undefined) {
+        description += `. Open tickets: ${customer.openTickets}`;
+      }
+      if (customer.csm) {
+        description += `. CSM: ${customer.csm.split('@')[0]}`;
+      }
+
+      return `
+        <div class="customer-card" onclick="navigateToCustomer('${customer.name}')" role="button" tabindex="0">
+          <div class="customer-card-header">
+            <h4 class="customer-card-name">${customer.name}</h4>
+            <span class="customer-card-sentiment sentiment-${sentimentClass}">${sentimentText}</span>
+          </div>
+          <div class="customer-card-description">${description}</div>
+        </div>
+      `;
+    }).join('');
+
+  } catch (e) {
+    console.error('Failed to load customer cards', e);
+  }
+}
+
+// Navigate to customer page
+function navigateToCustomer(customerName) {
+  window.location.hash = `customer/${customerName}`;
 }
 
 // =============================================================================
@@ -2777,7 +2903,12 @@ function setupWeekDropdown(data) {
   data.weeks.forEach(week => {
     const option = document.createElement('option');
     option.value = week.id;
-    option.textContent = week.name;
+
+    // Extract just the date part from the week name
+    // Example: "2026-07-03 Current Customer Status" -> "2026-07-03"
+    const dateMatch = week.name.match(/(\d{4}-\d{2}-\d{2})/);
+    option.textContent = dateMatch ? dateMatch[1] : week.name;
+
     dropdown.appendChild(option);
   });
 
