@@ -1318,6 +1318,385 @@
       .welcome-hero { padding: 24px 20px; }
       .welcome-title { font-size: 20px; }
     }
+
+    /* =======================================================
+       Admin Panel Styles
+       ======================================================= */
+    .admin-container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .access-denied {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-muted);
+    }
+
+    .access-denied svg {
+      color: var(--p1-txt);
+      margin-bottom: 16px;
+    }
+
+    .access-denied h3 {
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+
+    .admin-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .admin-stat-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      text-align: center;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .admin-stat-card h4 {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+
+    .admin-stat-card .stat-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--accent);
+      line-height: 1;
+    }
+
+    .admin-section {
+      margin-bottom: 32px;
+    }
+
+    .admin-section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .admin-section-header h3 {
+      color: var(--text-primary);
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    .admin-customer-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .admin-customer-item {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      display: flex;
+      justify-content: between;
+      align-items: center;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+
+    .admin-customer-item:hover {
+      border-color: var(--border-light);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .admin-customer-info {
+      flex: 1;
+    }
+
+    .admin-customer-name {
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .admin-customer-details {
+      font-size: 12px;
+      color: var(--text-secondary);
+      display: flex;
+      gap: 16px;
+    }
+
+    .admin-customer-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    /* Modal Styles */
+    .admin-form-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-content {
+      background: var(--bg-surface);
+      border-radius: var(--radius);
+      max-width: 500px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: var(--shadow-md);
+    }
+
+    .modal-header {
+      padding: 20px 24px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-header h3 {
+      color: var(--text-primary);
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: var(--text-muted);
+      padding: 0;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      transition: background-color var(--transition);
+    }
+
+    .modal-close:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+    }
+
+    .admin-form {
+      padding: 24px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+    }
+
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--bg-base);
+      color: var(--text-primary);
+      font-size: 14px;
+      transition: border-color var(--transition);
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+      margin-top: 24px;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all var(--transition);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-hover);
+    }
+
+    .btn-secondary {
+      background: var(--bg-surface2);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      background: var(--bg-hover);
+      border-color: var(--border-light);
+    }
+
+    .btn-sm {
+      padding: 6px 12px;
+      font-size: 12px;
+    }
+
+    /* Enhanced Dashboard Metrics */
+    .enhanced-metrics {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      margin-bottom: 32px;
+    }
+
+    .metric-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .metric-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .metric-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .metric-value {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+
+    .metric-chart {
+      height: 40px;
+      margin-top: 12px;
+    }
+
+    .sentiment-bar {
+      display: flex;
+      height: 6px;
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+
+    .sentiment-positive { background: var(--status-done-txt); }
+    .sentiment-neutral { background: var(--status-prog-txt); }
+    .sentiment-negative { background: var(--p1-txt); }
+
+    .role-details-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      margin-bottom: 32px;
+    }
+
+    .role-detail-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .role-detail-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .role-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .role-icon.csm { background: var(--status-done-bg); color: var(--status-done-txt); }
+    .role-icon.tam { background: var(--status-prog-bg); color: var(--status-prog-txt); }
+    .role-icon.lead { background: var(--accent-soft); color: var(--accent); }
+
+    .role-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .role-subtitle {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    @media (max-width: 768px) {
+      .admin-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .enhanced-metrics {
+        grid-template-columns: 1fr;
+      }
+
+      .role-details-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .admin-section-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 16px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -1366,6 +1745,10 @@
       <a class="nav-link" data-page="wiki" href="#wiki">
         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
         Wiki
+      </a>
+      <a class="nav-link" data-page="admin" href="#admin" id="admin-nav-link" style="display: none;">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 15a3 3 0 003-3.5A2 2 0 0117 9V7a1 1 0 00-1-1H8a1 1 0 00-1 1v2a2 2 0 002 2.5A3 3 0 0012 15z"/><path d="M3 21h18"/><path d="M5 21V7l4-4h6l4 4v14"/></svg>
+        Admin
       </a>
 
       <div class="nav-section-label" style="margin-top:12px;">Customers</div>
@@ -1531,6 +1914,68 @@
           </div>
         </div>
 
+        <!-- Enhanced Customer Metrics -->
+        <div class="enhanced-metrics" id="enhanced-metrics">
+          <div class="metric-card">
+            <div class="metric-header">
+              <div class="metric-title">Customer Sentiment</div>
+            </div>
+            <div class="metric-value" id="sentiment-score">-</div>
+            <div class="sentiment-bar" id="sentiment-bar">
+              <!-- Populated by JavaScript -->
+            </div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-header">
+              <div class="metric-title">Total Open Tickets</div>
+            </div>
+            <div class="metric-value" id="total-open-tickets">-</div>
+            <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
+              Across <span id="customers-with-tickets">-</span> customers
+            </div>
+          </div>
+        </div>
+
+        <!-- Role Details -->
+        <div class="role-details-grid" id="role-details">
+          <div class="role-detail-card">
+            <div class="role-detail-header">
+              <div class="role-icon csm">👥</div>
+              <div>
+                <div class="role-title">Customer Success Manager</div>
+                <div class="role-subtitle">Primary point of contact</div>
+              </div>
+            </div>
+            <div id="csm-details">
+              <div style="color: var(--text-secondary); font-size: 14px;">Loading...</div>
+            </div>
+          </div>
+          <div class="role-detail-card">
+            <div class="role-detail-header">
+              <div class="role-icon tam">🔧</div>
+              <div>
+                <div class="role-title">Technical Account Manager</div>
+                <div class="role-subtitle">Technical escalation contact</div>
+              </div>
+            </div>
+            <div id="tam-details">
+              <div style="color: var(--text-secondary); font-size: 14px;">Loading...</div>
+            </div>
+          </div>
+          <div class="role-detail-card">
+            <div class="role-detail-header">
+              <div class="role-icon lead">⭐</div>
+              <div>
+                <div class="role-title">Lead Contact</div>
+                <div class="role-subtitle">Leadership and strategy</div>
+              </div>
+            </div>
+            <div id="lead-details">
+              <div style="color: var(--text-secondary); font-size: 14px;">Loading...</div>
+            </div>
+          </div>
+        </div>
+
         <div class="card">
           <div class="section-title">Recent Activity</div>
           <ul class="activity-list">
@@ -1685,6 +2130,107 @@
         </div>
       </section>
 
+      <!-- ===== ADMIN PANEL ===== -->
+      <section class="page" id="page-admin">
+        <div class="page-header">
+          <h2>Admin Panel</h2>
+          <p>Customer management and system administration</p>
+        </div>
+
+        <div class="admin-container">
+          <!-- Admin Access Check -->
+          <div id="admin-access-check" style="display: none;">
+            <div class="access-denied">
+              <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                <path d="M12 9v4M12 17h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              <h3>Access Denied</h3>
+              <p>You don't have permission to access the admin panel.</p>
+            </div>
+          </div>
+
+          <!-- Admin Dashboard -->
+          <div id="admin-dashboard" style="display: none;">
+            <!-- Admin Stats -->
+            <div class="admin-stats-grid">
+              <div class="admin-stat-card">
+                <h4>Total Customers</h4>
+                <span id="admin-total-customers" class="stat-value">-</span>
+              </div>
+              <div class="admin-stat-card">
+                <h4>Active Customers</h4>
+                <span id="admin-active-customers" class="stat-value">-</span>
+              </div>
+              <div class="admin-stat-card">
+                <h4>Avg Sentiment</h4>
+                <span id="admin-avg-sentiment" class="stat-value">-</span>
+              </div>
+              <div class="admin-stat-card">
+                <h4>Total Open Tickets</h4>
+                <span id="admin-total-tickets" class="stat-value">-</span>
+              </div>
+            </div>
+
+            <!-- Customer Management -->
+            <div class="admin-section">
+              <div class="admin-section-header">
+                <h3>Customer Management</h3>
+                <button class="btn btn-primary" id="add-customer-btn">Add Customer</button>
+              </div>
+
+              <!-- Customer List -->
+              <div class="admin-customer-list" id="admin-customer-list">
+                <!-- Customer items will be populated by JavaScript -->
+              </div>
+            </div>
+
+            <!-- Add Customer Form -->
+            <div class="admin-form-modal" id="add-customer-modal" style="display: none;">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h3>Add New Customer</h3>
+                  <button class="modal-close" id="close-customer-modal">&times;</button>
+                </div>
+                <form id="add-customer-form" class="admin-form">
+                  <div class="form-group">
+                    <label for="customer-name">Customer Name</label>
+                    <input type="text" id="customer-name" name="customer_name" required>
+                  </div>
+                  <div class="form-group">
+                    <label for="csm-email">Customer Success Manager</label>
+                    <input type="email" id="csm-email" name="csm_email" required>
+                  </div>
+                  <div class="form-group">
+                    <label for="tam-email">Technical Account Manager</label>
+                    <input type="email" id="tam-email" name="tam_email">
+                  </div>
+                  <div class="form-group">
+                    <label for="lead-email">Lead Email</label>
+                    <input type="email" id="lead-email" name="lead_email">
+                  </div>
+                  <div class="form-group">
+                    <label for="sentiment">Sentiment</label>
+                    <select id="sentiment" name="sentiment">
+                      <option value="positive">Positive</option>
+                      <option value="neutral" selected>Neutral</option>
+                      <option value="negative">Negative</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label for="open-tickets">Open Tickets</label>
+                    <input type="number" id="open-tickets" name="open_tickets" min="0" value="0">
+                  </div>
+                  <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="cancel-customer">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Customer</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
     </main>
   </div>
 </div>
@@ -1733,6 +2279,7 @@ const PAGE_TITLES = {
   staff:     'Staff',
   wiki:      'Wiki',
   customer:  'Customer Details',
+  admin:     'Admin Panel',
 };
 
 // =============================================================================
@@ -1820,13 +2367,203 @@ async function loadStats() {
     const res = await fetch('/api/stats');
     if (!res.ok) return;
     const stats = await res.json();
+
+    // Update legacy stats
     document.getElementById('stat-open').textContent       = stats.open;
     document.getElementById('stat-inprogress').textContent = stats.inProgress;
     document.getElementById('stat-resolved').textContent   = stats.resolved;
     document.getElementById('stat-staff').textContent      = stats.totalStaff;
+
+    // Update enhanced metrics
+    if (stats.customerSentiment && stats.totalOpenTickets !== undefined) {
+      // Sentiment score and bar
+      const sentimentScore = Math.round(stats.customerSentiment.averageScore * 100);
+      document.getElementById('sentiment-score').textContent = `${sentimentScore}%`;
+
+      const sentimentBar = document.getElementById('sentiment-bar');
+      if (sentimentBar) {
+        const total = stats.customerSentiment.positive + stats.customerSentiment.neutral + stats.customerSentiment.negative;
+        if (total > 0) {
+          const positivePct = (stats.customerSentiment.positive / total) * 100;
+          const neutralPct = (stats.customerSentiment.neutral / total) * 100;
+          const negativePct = (stats.customerSentiment.negative / total) * 100;
+
+          sentimentBar.innerHTML = `
+            <div class="sentiment-positive" style="width: ${positivePct}%;"></div>
+            <div class="sentiment-neutral" style="width: ${neutralPct}%;"></div>
+            <div class="sentiment-negative" style="width: ${negativePct}%;"></div>
+          `;
+        }
+      }
+
+      // Total open tickets
+      document.getElementById('total-open-tickets').textContent = stats.totalOpenTickets;
+      document.getElementById('customers-with-tickets').textContent = stats.metrics?.customersWithTickets || 0;
+    }
+
+    // Load role details
+    loadRoleDetails();
+
   } catch (e) {
     console.error('Failed to load stats', e);
   }
+}
+
+// Load role contact details
+async function loadRoleDetails() {
+  try {
+    const res = await fetch('/api/customers');
+    if (!res.ok) return;
+
+    const data = await res.json();
+    const customers = data.customers || [];
+
+    // Extract unique contacts by role
+    const csmContacts = [...new Set(customers.map(c => c.csm).filter(Boolean))];
+    const tamContacts = [...new Set(customers.map(c => c.tam).filter(Boolean))];
+    const leadContacts = [...new Set(customers.map(c => c.lead).filter(Boolean))];
+
+    // Update role details
+    document.getElementById('csm-details').innerHTML = csmContacts.length > 0 ?
+      csmContacts.map(email => `<div style="font-size: 14px; color: var(--text-primary);">${email}</div>`).join('') :
+      '<div style="color: var(--text-muted); font-size: 14px;">No CSM assigned</div>';
+
+    document.getElementById('tam-details').innerHTML = tamContacts.length > 0 ?
+      tamContacts.map(email => `<div style="font-size: 14px; color: var(--text-primary);">${email}</div>`).join('') :
+      '<div style="color: var(--text-muted); font-size: 14px;">No TAM assigned</div>';
+
+    document.getElementById('lead-details').innerHTML = leadContacts.length > 0 ?
+      leadContacts.map(email => `<div style="font-size: 14px; color: var(--text-primary);">${email}</div>`).join('') :
+      '<div style="color: var(--text-muted); font-size: 14px;">No Lead assigned</div>';
+
+  } catch (e) {
+    console.error('Failed to load role details', e);
+  }
+}
+
+// =============================================================================
+// Admin Functions
+// =============================================================================
+
+let userPermissions = null;
+
+// Check user permissions and show/hide admin elements
+async function checkAdminAccess() {
+  try {
+    const res = await fetch('/api/admin/permissions');
+    if (res.ok) {
+      userPermissions = await res.json();
+      const hasAdminAccess = userPermissions.hasAdminAccess;
+
+      // Show/hide admin nav link
+      const adminNavLink = document.getElementById('admin-nav-link');
+      if (adminNavLink) {
+        adminNavLink.style.display = hasAdminAccess ? 'flex' : 'none';
+      }
+
+      return hasAdminAccess;
+    }
+  } catch (e) {
+    console.error('Failed to check admin access', e);
+  }
+  return false;
+}
+
+// Load admin dashboard
+async function loadAdminDashboard() {
+  const adminDashboard = document.getElementById('admin-dashboard');
+  const adminAccessCheck = document.getElementById('admin-access-check');
+
+  const hasAccess = await checkAdminAccess();
+
+  if (!hasAccess) {
+    adminDashboard.style.display = 'none';
+    adminAccessCheck.style.display = 'block';
+    return;
+  }
+
+  adminDashboard.style.display = 'block';
+  adminAccessCheck.style.display = 'none';
+
+  // Load admin data
+  loadAdminCustomers();
+}
+
+// Load admin customers and metrics
+async function loadAdminCustomers() {
+  try {
+    const res = await fetch('/api/admin/customers');
+    if (!res.ok) return;
+
+    const data = await res.json();
+    const { customers, metrics } = data;
+
+    // Update admin stats
+    document.getElementById('admin-total-customers').textContent = metrics.totalCustomers;
+    document.getElementById('admin-active-customers').textContent = metrics.activeCustomers;
+    document.getElementById('admin-avg-sentiment').textContent = `${Math.round(metrics.avgSentiment * 100)}%`;
+    document.getElementById('admin-total-tickets').textContent = metrics.totalOpenTickets;
+
+    // Render customer list
+    const customerList = document.getElementById('admin-customer-list');
+    customerList.innerHTML = customers.map(customer => `
+      <div class="admin-customer-item">
+        <div class="admin-customer-info">
+          <div class="admin-customer-name">${customer.customer_name}</div>
+          <div class="admin-customer-details">
+            <span>Status: ${customer.status}</span>
+            <span>Sentiment: ${customer.sentiment}</span>
+            <span>Tickets: ${customer.open_tickets}</span>
+            <span>CSM: ${customer.csm_email}</span>
+          </div>
+        </div>
+        <div class="admin-customer-actions">
+          <button class="btn btn-sm btn-secondary" onclick="editCustomer('${customer.customer_id}')">Edit</button>
+        </div>
+      </div>
+    `).join('');
+
+  } catch (e) {
+    console.error('Failed to load admin customers', e);
+  }
+}
+
+// Add new customer
+async function addCustomer(customerData) {
+  try {
+    const res = await fetch('/api/admin/customers', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(customerData)
+    });
+
+    if (res.ok) {
+      const result = await res.json();
+      console.log('Customer added successfully:', result);
+      // Reload admin data
+      loadAdminCustomers();
+      // Close modal
+      document.getElementById('add-customer-modal').style.display = 'none';
+      return true;
+    } else {
+      const error = await res.json();
+      console.error('Failed to add customer:', error);
+      alert(`Failed to add customer: ${error.error}`);
+      return false;
+    }
+  } catch (e) {
+    console.error('Error adding customer:', e);
+    alert('Error adding customer. Please try again.');
+    return false;
+  }
+}
+
+// Edit customer (placeholder for future implementation)
+function editCustomer(customerId) {
+  console.log('Edit customer:', customerId);
+  alert('Customer editing will be implemented in the next version.');
 }
 
 // =============================================================================
@@ -2395,7 +3132,7 @@ function initializePowerPointTabs() {
 // =============================================================================
 // SPA routing
 // =============================================================================
-const pages = ['dashboard', 'cases', 'staff', 'wiki', 'customer'];
+const pages = ['dashboard', 'cases', 'staff', 'wiki', 'customer', 'admin'];
 const pageTitle = document.getElementById('page-title');
 
 function navigateTo(pageId, customerName = null) {
@@ -2418,10 +3155,13 @@ function navigateTo(pageId, customerName = null) {
     link.classList.toggle('active', isActive);
   });
 
-  // Update header title
+  // Update header title and handle page-specific logic
   if (pageId === 'customer' && customerName) {
     pageTitle.textContent = `${customerName} Details`;
     loadCustomerDetails(customerName);
+  } else if (pageId === 'admin') {
+    pageTitle.textContent = PAGE_TITLES[pageId] || '';
+    loadAdminDashboard();
   } else {
     pageTitle.textContent = PAGE_TITLES[pageId] || '';
   }
@@ -2462,14 +3202,53 @@ document.getElementById('main-wrap').addEventListener('click', () => {
 });
 
 // =============================================================================
+// Admin Form Event Handlers
+// =============================================================================
+
+// Add Customer Modal Handlers
+document.getElementById('add-customer-btn')?.addEventListener('click', () => {
+  document.getElementById('add-customer-modal').style.display = 'flex';
+});
+
+document.getElementById('close-customer-modal')?.addEventListener('click', () => {
+  document.getElementById('add-customer-modal').style.display = 'none';
+});
+
+document.getElementById('cancel-customer')?.addEventListener('click', () => {
+  document.getElementById('add-customer-modal').style.display = 'none';
+});
+
+// Add Customer Form Submit
+document.getElementById('add-customer-form')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const formData = new FormData(e.target);
+  const customerData = Object.fromEntries(formData.entries());
+
+  const success = await addCustomer(customerData);
+  if (success) {
+    e.target.reset();
+  }
+});
+
+// Close modal when clicking outside
+document.getElementById('add-customer-modal')?.addEventListener('click', (e) => {
+  if (e.target.id === 'add-customer-modal') {
+    e.target.style.display = 'none';
+  }
+});
+
+// =============================================================================
 // Init
 // =============================================================================
 (async function init() {
   await loadUser();
+  await checkAdminAccess(); // Check admin permissions early
   await loadStats();
   initCases();
   renderStaff();
   initWiki();
+  initializePowerPointTabs(); // Initialize tab functionality
   handleHashChange();
   // Set header timestamp
   const el = document.getElementById('header-last-updated');

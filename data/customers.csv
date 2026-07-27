@@ -1,0 +1,5 @@
+customer_id,customer_name,status,csm_email,tam_email,lead_email,sentiment,open_tickets,last_updated
+1,BMS,active,sushma.r@sycamoreinformatics.com,alex.rivera@sycamoreinformatics.com,jordan.lee@sycamoreinformatics.com,positive,3,2024-07-27
+2,Otsuka,active,sushma.r@sycamoreinformatics.com,sam.patel@sycamoreinformatics.com,morgan.chen@sycamoreinformatics.com,neutral,7,2024-07-27
+3,Pfizer,active,sushma.r@sycamoreinformatics.com,alex.rivera@sycamoreinformatics.com,jordan.lee@sycamoreinformatics.com,positive,1,2024-07-27
+4,Novartis,active,sushma.r@sycamoreinformatics.com,sam.patel@sycamoreinformatics.com,alex.rivera@sycamoreinformatics.com,positive,2,2024-07-27

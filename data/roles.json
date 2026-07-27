@@ -1,0 +1,38 @@
+{
+  "adminUsers": [
+    "sushma.r@sycamoreinformatics.com"
+  ],
+  "roles": {
+    "admin": {
+      "name": "Administrator",
+      "permissions": [
+        "customer:create",
+        "customer:edit",
+        "customer:delete",
+        "staff:manage",
+        "admin:access",
+        "data:export",
+        "system:configure"
+      ]
+    },
+    "manager": {
+      "name": "Customer Success Manager",
+      "permissions": [
+        "customer:view",
+        "customer:edit",
+        "staff:view",
+        "metrics:view"
+      ]
+    },
+    "user": {
+      "name": "User",
+      "permissions": [
+        "customer:view",
+        "metrics:view"
+      ]
+    }
+  },
+  "userRoles": {
+    "sushma.r@sycamoreinformatics.com": "admin"
+  }
+}

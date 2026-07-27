@@ -34,6 +34,19 @@ const SESSION_TTL_MS = 8 * 60 * 60 * 1000; // 8 hours
 const DRIVE_FOLDER_ID = '1X7xX-jWWgQ0tGYeXKPPvVe0jXzbv74AM';
 const DRIVE_SCOPES = ['https://www.googleapis.com/auth/drive.readonly'];
 
+// CSV Cache configuration
+const CSV_CACHE_PATH = path.join(__dirname, 'data', 'customers.csv');
+const ROLES_PATH = path.join(__dirname, 'data', 'roles.json');
+const CSV_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+// RBAC permissions
+let rolesConfig = {};
+try {
+  rolesConfig = JSON.parse(fs.readFileSync(ROLES_PATH, 'utf8'));
+} catch (err) {
+  console.warn('Warning: Could not load roles configuration:', err.message);
+}
+
 // ---------------------------------------------------------------------------
 // In-memory session store
 // ---------------------------------------------------------------------------
@@ -58,6 +71,138 @@ function getSession(id) {
 
 function deleteSession(id) {
   sessions.delete(id);
+}
+
+// ---------------------------------------------------------------------------
+// RBAC Helper Functions
+// ---------------------------------------------------------------------------
+
+function getUserRole(userEmail) {
+  return rolesConfig.userRoles?.[userEmail] || 'user';
+}
+
+function hasPermission(userEmail, permission) {
+  if (rolesConfig.adminUsers?.includes(userEmail)) {
+    return true; // Admins have all permissions
+  }
+
+  const userRole = getUserRole(userEmail);
+  const rolePermissions = rolesConfig.roles?.[userRole]?.permissions || [];
+  return rolePermissions.includes(permission);
+}
+
+function requireAuth(req, user) {
+  if (!user) {
+    throw new Error('Authentication required');
+  }
+}
+
+function requirePermission(req, user, permission) {
+  requireAuth(req, user);
+  if (!hasPermission(user.email, permission)) {
+    throw new Error('Insufficient permissions');
+  }
+}
+
+// ---------------------------------------------------------------------------
+// CSV Cache Helper Functions
+// ---------------------------------------------------------------------------
+
+let csvCache = { data: null, lastUpdate: 0 };
+
+function parseCSV(csvContent) {
+  const lines = csvContent.trim().split('\n');
+  return lines.map(line => {
+    const values = [];
+    let current = '';
+    let inQuotes = false;
+
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      if (char === '"') {
+        inQuotes = !inQuotes;
+      } else if (char === ',' && !inQuotes) {
+        values.push(current.trim());
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+    values.push(current.trim());
+    return values;
+  });
+}
+
+function loadCustomersFromCSV() {
+  try {
+    const csvContent = fs.readFileSync(CSV_CACHE_PATH, 'utf8');
+    const rows = parseCSV(csvContent);
+
+    if (rows.length === 0) return [];
+
+    const headers = rows[0];
+    const customers = rows.slice(1).map(row => {
+      const customer = {};
+      headers.forEach((header, index) => {
+        customer[header] = row[index] || '';
+      });
+      return customer;
+    });
+
+    csvCache = {
+      data: customers,
+      lastUpdate: Date.now()
+    };
+
+    return customers;
+  } catch (err) {
+    console.error('Error loading customers from CSV:', err.message);
+    return [];
+  }
+}
+
+function getCustomersFromCache() {
+  const now = Date.now();
+  if (!csvCache.data || (now - csvCache.lastUpdate) > CSV_CACHE_TTL) {
+    return loadCustomersFromCSV();
+  }
+  return csvCache.data;
+}
+
+function stringifyCSV(rows) {
+  return rows.map(row =>
+    row.map(cell => {
+      const str = String(cell || '');
+      if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
+    }).join(',')
+  ).join('\n');
+}
+
+function saveCustomersToCSV(customers) {
+  try {
+    if (customers.length === 0) return;
+
+    const headers = Object.keys(customers[0]);
+    const rows = [headers, ...customers.map(customer =>
+      headers.map(header => customer[header] || '')
+    )];
+
+    const csvContent = stringifyCSV(rows);
+    fs.writeFileSync(CSV_CACHE_PATH, csvContent, 'utf8');
+
+    csvCache = {
+      data: customers,
+      lastUpdate: Date.now()
+    };
+
+    return true;
+  } catch (err) {
+    console.error('Error saving customers to CSV:', err.message);
+    return false;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -1125,12 +1270,62 @@ function handleApiStats(req, res) {
   const auth = resolveUser(req);
   if (!auth) return sendJSON(res, 401, { error: 'Unauthorized' });
 
+  // Get enhanced stats from CSV data
+  const csvCustomers = getCustomersFromCache();
+
   const open = MOCK_CASES.filter(c => c.status === 'Open').length;
   const inProgress = MOCK_CASES.filter(c => c.status === 'In Progress').length;
   const resolved = MOCK_CASES.filter(c => c.status === 'Resolved').length;
   const totalStaff = config.staff ? config.staff.length : 0;
 
-  sendJSON(res, 200, { open, inProgress, resolved, totalStaff });
+  // Enhanced customer metrics from CSV
+  const totalCustomers = csvCustomers.length;
+  const activeCustomers = csvCustomers.filter(c => c.status === 'active').length;
+
+  // Calculate sentiment distribution
+  const sentimentCounts = csvCustomers.reduce((acc, customer) => {
+    acc[customer.sentiment] = (acc[customer.sentiment] || 0) + 1;
+    return acc;
+  }, { positive: 0, neutral: 0, negative: 0 });
+
+  // Calculate total open tickets across all customers
+  const totalOpenTickets = csvCustomers.reduce((sum, customer) => {
+    return sum + parseInt(customer.open_tickets || 0);
+  }, 0);
+
+  // Average sentiment score (positive=1, neutral=0.5, negative=0)
+  const avgSentimentScore = csvCustomers.length > 0 ?
+    csvCustomers.reduce((sum, customer) => {
+      switch(customer.sentiment) {
+        case 'positive': return sum + 1;
+        case 'neutral': return sum + 0.5;
+        case 'negative': return sum + 0;
+        default: return sum + 0.5;
+      }
+    }, 0) / csvCustomers.length : 0;
+
+  sendJSON(res, 200, {
+    // Legacy stats
+    open,
+    inProgress,
+    resolved,
+    totalStaff,
+    // Enhanced customer metrics
+    totalCustomers,
+    activeCustomers,
+    totalOpenTickets,
+    customerSentiment: {
+      positive: sentimentCounts.positive,
+      neutral: sentimentCounts.neutral,
+      negative: sentimentCounts.negative,
+      averageScore: Math.round(avgSentimentScore * 100) / 100
+    },
+    metrics: {
+      customersWithTickets: csvCustomers.filter(c => parseInt(c.open_tickets || 0) > 0).length,
+      avgTicketsPerCustomer: totalCustomers > 0 ? Math.round((totalOpenTickets / totalCustomers) * 100) / 100 : 0,
+      sentimentTrend: avgSentimentScore > 0.7 ? 'positive' : avgSentimentScore > 0.4 ? 'neutral' : 'negative'
+    }
+  });
 }
 
 // GET /api/wiki/* — serve raw markdown
@@ -1160,32 +1355,73 @@ function handleApiWiki(req, res, wikiPath) {
 }
 
 // GET /api/customers — get all customer data
-async function handleApiCustomers(req, res) {
+async function handleApiCustomers(req, res, method = 'GET') {
   const auth = resolveUser(req);
   if (!auth) return sendJSON(res, 401, { error: 'Unauthorized' });
 
+  // First get CSV cached customer data for enhanced response
+  const csvCustomers = getCustomersFromCache();
+  const csvCustomerMap = {};
+  csvCustomers.forEach(c => {
+    csvCustomerMap[c.customer_name] = c;
+  });
+
   try {
     const customerData = await getCustomerDataFromDrive();
-    const customers = Object.keys(customerData).map(name => ({
-      name,
-      dataCount: customerData[name].length,
-      lastUpdated: Math.max(...customerData[name].map(d => new Date(d.modifiedTime).getTime()))
-    }));
+    const customers = Object.keys(customerData).map(name => {
+      const csvData = csvCustomerMap[name] || {};
+      return {
+        name,
+        dataCount: customerData[name].length,
+        lastUpdated: Math.max(...customerData[name].map(d => new Date(d.modifiedTime).getTime())),
+        // Enhanced data from CSV
+        status: csvData.status || 'active',
+        csm: csvData.csm_email || '',
+        tam: csvData.tam_email || '',
+        lead: csvData.lead_email || '',
+        sentiment: csvData.sentiment || 'neutral',
+        openTickets: parseInt(csvData.open_tickets || 0)
+      };
+    });
+
+    // Add any CSV-only customers that don't have Drive data
+    csvCustomers.forEach(csvCustomer => {
+      if (!customers.find(c => c.name === csvCustomer.customer_name)) {
+        customers.push({
+          name: csvCustomer.customer_name,
+          dataCount: 0,
+          lastUpdated: Date.now(),
+          status: csvCustomer.status,
+          csm: csvCustomer.csm_email,
+          tam: csvCustomer.tam_email,
+          lead: csvCustomer.lead_email,
+          sentiment: csvCustomer.sentiment,
+          openTickets: parseInt(csvCustomer.open_tickets || 0),
+          csvOnly: true
+        });
+      }
+    });
 
     sendJSON(res, 200, { customers });
   } catch (error) {
     console.error('Error fetching customers:', error);
 
-    // Return fallback data structure to prevent frontend errors
-    const fallbackCustomers = ['AbbVie', 'Alcon', 'Ascendis', 'BMS', 'Otsuka', 'PMI', 'Zealand'];
-    const customers = fallbackCustomers.map(name => ({
-      name,
+    // Return CSV data as fallback with enhanced information
+    const customers = csvCustomers.map(csvCustomer => ({
+      name: csvCustomer.customer_name,
       dataCount: 0,
       lastUpdated: Date.now(),
-      error: true
+      status: csvCustomer.status,
+      csm: csvCustomer.csm_email,
+      tam: csvCustomer.tam_email,
+      lead: csvCustomer.lead_email,
+      sentiment: csvCustomer.sentiment,
+      openTickets: parseInt(csvCustomer.open_tickets || 0),
+      error: true,
+      csvFallback: true
     }));
 
-    sendJSON(res, 200, { customers, warning: 'Drive API unavailable, showing fallback data' });
+    sendJSON(res, 200, { customers, warning: 'Drive API unavailable, showing CSV cached data' });
   }
 }
 
@@ -1542,6 +1778,142 @@ function handleStatic(req, res, urlPath) {
 }
 
 // ---------------------------------------------------------------------------
+// Admin API Handlers
+// ---------------------------------------------------------------------------
+
+// Helper to parse JSON request body
+async function parseRequestBody(req) {
+  return new Promise((resolve, reject) => {
+    let body = '';
+    req.on('data', chunk => {
+      body += chunk.toString();
+    });
+    req.on('end', () => {
+      try {
+        resolve(body ? JSON.parse(body) : {});
+      } catch (err) {
+        reject(new Error('Invalid JSON'));
+      }
+    });
+    req.on('error', reject);
+  });
+}
+
+// GET/POST /api/admin/customers - Admin customer management
+async function handleAdminCustomers(req, res, method) {
+  const user = resolveUser(req);
+  try {
+    requirePermission(req, user, 'admin:access');
+
+    if (method === 'GET') {
+      const customers = getCustomersFromCache();
+      const metrics = {
+        totalCustomers: customers.length,
+        activeCustomers: customers.filter(c => c.status === 'active').length,
+        avgSentiment: customers.reduce((sum, c) => {
+          if (c.sentiment === 'positive') return sum + 1;
+          if (c.sentiment === 'neutral') return sum + 0.5;
+          return sum;
+        }, 0) / customers.length,
+        totalOpenTickets: customers.reduce((sum, c) => sum + parseInt(c.open_tickets || 0), 0)
+      };
+
+      return sendJSON(res, 200, { customers, metrics });
+    }
+
+    if (method === 'POST') {
+      const body = await parseRequestBody(req);
+      const customers = getCustomersFromCache();
+
+      const newCustomer = {
+        customer_id: String(customers.length + 1),
+        customer_name: body.customer_name,
+        status: body.status || 'active',
+        csm_email: body.csm_email || user.email,
+        tam_email: body.tam_email || '',
+        lead_email: body.lead_email || '',
+        sentiment: body.sentiment || 'neutral',
+        open_tickets: body.open_tickets || '0',
+        last_updated: new Date().toISOString().split('T')[0]
+      };
+
+      customers.push(newCustomer);
+
+      if (saveCustomersToCSV(customers)) {
+        return sendJSON(res, 201, { success: true, customer: newCustomer });
+      } else {
+        return sendJSON(res, 500, { error: 'Failed to save customer data' });
+      }
+    }
+
+  } catch (err) {
+    console.error('Admin customers error:', err.message);
+    if (err.message === 'Authentication required') {
+      return sendJSON(res, 401, { error: 'Unauthorized' });
+    }
+    if (err.message === 'Insufficient permissions') {
+      return sendJSON(res, 403, { error: 'Admin access required' });
+    }
+    return sendJSON(res, 500, { error: 'Internal server error' });
+  }
+}
+
+// GET /api/admin/permissions - Check user permissions
+function handleAdminPermissions(req, res) {
+  const user = resolveUser(req);
+  if (!user) return sendJSON(res, 401, { error: 'Unauthorized' });
+
+  const userRole = getUserRole(user.email);
+  const permissions = rolesConfig.roles?.[userRole]?.permissions || [];
+  const isAdmin = rolesConfig.adminUsers?.includes(user.email) || false;
+
+  return sendJSON(res, 200, {
+    user: {
+      email: user.email,
+      name: user.name,
+      role: userRole,
+      isAdmin
+    },
+    permissions,
+    hasAdminAccess: hasPermission(user.email, 'admin:access')
+  });
+}
+
+// GET /api/admin/roles - Get available roles and permissions
+function handleAdminRoles(req, res) {
+  const user = resolveUser(req);
+  try {
+    requirePermission(req, user, 'admin:access');
+
+    return sendJSON(res, 200, {
+      roles: rolesConfig.roles,
+      adminUsers: rolesConfig.adminUsers,
+      availablePermissions: [
+        'customer:create',
+        'customer:edit',
+        'customer:delete',
+        'customer:view',
+        'staff:manage',
+        'staff:view',
+        'admin:access',
+        'data:export',
+        'system:configure',
+        'metrics:view'
+      ]
+    });
+
+  } catch (err) {
+    if (err.message === 'Authentication required') {
+      return sendJSON(res, 401, { error: 'Unauthorized' });
+    }
+    if (err.message === 'Insufficient permissions') {
+      return sendJSON(res, 403, { error: 'Admin access required' });
+    }
+    return sendJSON(res, 500, { error: 'Internal server error' });
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Main request handler
 // ---------------------------------------------------------------------------
 async function requestHandler(req, res) {
@@ -1553,7 +1925,7 @@ async function requestHandler(req, res) {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
 
-  if (method !== 'GET' && method !== 'HEAD') {
+  if (method !== 'GET' && method !== 'HEAD' && method !== 'POST' && method !== 'PUT' && method !== 'DELETE') {
     return sendJSON(res, 405, { error: 'Method not allowed' });
   }
 
@@ -1570,11 +1942,15 @@ async function requestHandler(req, res) {
     if (pathname === '/api/me') return handleApiMe(req, res);
     if (pathname === '/api/cases') return handleApiCases(req, res);
     if (pathname === '/api/stats') return handleApiStats(req, res);
-    if (pathname === '/api/customers') return await handleApiCustomers(req, res);
+    if (pathname === '/api/customers') return await handleApiCustomers(req, res, method);
     if (pathname.startsWith('/api/customers/')) {
       const customerName = pathname.slice('/api/customers/'.length);
       return await handleApiCustomerDetails(req, res, customerName);
     }
+    // Admin routes
+    if (pathname === '/api/admin/customers') return await handleAdminCustomers(req, res, method);
+    if (pathname === '/api/admin/permissions') return handleAdminPermissions(req, res);
+    if (pathname === '/api/admin/roles') return handleAdminRoles(req, res);
     if (pathname.startsWith('/api/wiki/')) {
       const wikiFile = pathname.slice('/api/wiki/'.length);
       return handleApiWiki(req, res, wikiFile);
