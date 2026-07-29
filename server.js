@@ -724,7 +724,12 @@ function findCustomerSlide(slides, customerName) {
     'BMS': ['bms', 'bristol', 'myers', 'bristol-myers', 'bristol myers squibb'],
     'Otsuka': ['otsuka', 'otsu'],
     'PMI': ['pmi', 'philip morris'],
-    'Zealand': ['zealand', 'zeal']
+    'Zealand': ['zealand', 'zeal'],
+    'CSL': ['csl', 'csl limited', 'csl behring'],
+    'Genmab': ['genmab', 'gen mab'],
+    'Takeda': ['takeda', 'takeda pharmaceutical'],
+    'Vertex': ['vertex', 'vertex pharmaceuticals'],
+    'Denali': ['denali', 'denali therapeutics']
   };
 
   const patterns = customerPatterns[customerName] || [customerName.toLowerCase()];

@@ -1,5 +1,13 @@
 customer_id,customer_name,status,csm_email,tam_email,lead_email,sentiment,open_tickets,last_updated
-1,BMS,active,sushma.r@sycamoreinformatics.com,alex.rivera@sycamoreinformatics.com,jordan.lee@sycamoreinformatics.com,positive,3,2024-07-27
-2,Otsuka,active,sushma.r@sycamoreinformatics.com,sam.patel@sycamoreinformatics.com,morgan.chen@sycamoreinformatics.com,neutral,7,2024-07-27
-3,Pfizer,active,sushma.r@sycamoreinformatics.com,alex.rivera@sycamoreinformatics.com,jordan.lee@sycamoreinformatics.com,positive,1,2024-07-27
-4,Novartis,active,sushma.r@sycamoreinformatics.com,sam.patel@sycamoreinformatics.com,alex.rivera@sycamoreinformatics.com,positive,2,2024-07-27
+1,AbbVie,active,sushma.r@sycamoreinformatics.com,alex.rivera@sycamoreinformatics.com,jordan.lee@sycamoreinformatics.com,positive,0,2026-07-29
+2,Alcon,active,sushma.r@sycamoreinformatics.com,sam.patel@sycamoreinformatics.com,alex.rivera@sycamoreinformatics.com,neutral,0,2026-07-29
+3,Ascendis,active,sushma.r@sycamoreinformatics.com,alex.rivera@sycamoreinformatics.com,jordan.lee@sycamoreinformatics.com,neutral,0,2026-07-29
+4,BMS,active,sushma.r@sycamoreinformatics.com,alex.rivera@sycamoreinformatics.com,jordan.lee@sycamoreinformatics.com,positive,3,2026-07-29
+5,Otsuka,active,sushma.r@sycamoreinformatics.com,sam.patel@sycamoreinformatics.com,morgan.chen@sycamoreinformatics.com,neutral,7,2026-07-29
+6,PMI,active,sushma.r@sycamoreinformatics.com,sam.patel@sycamoreinformatics.com,morgan.chen@sycamoreinformatics.com,neutral,0,2026-07-29
+7,Zealand,active,sushma.r@sycamoreinformatics.com,alex.rivera@sycamoreinformatics.com,jordan.lee@sycamoreinformatics.com,neutral,0,2026-07-29
+8,CSL,active,sushma.r@sycamoreinformatics.com,sam.patel@sycamoreinformatics.com,alex.rivera@sycamoreinformatics.com,neutral,0,2026-07-29
+9,Genmab,active,sushma.r@sycamoreinformatics.com,alex.rivera@sycamoreinformatics.com,jordan.lee@sycamoreinformatics.com,neutral,0,2026-07-29
+10,Takeda,active,sushma.r@sycamoreinformatics.com,sam.patel@sycamoreinformatics.com,morgan.chen@sycamoreinformatics.com,neutral,0,2026-07-29
+11,Vertex,active,sushma.r@sycamoreinformatics.com,alex.rivera@sycamoreinformatics.com,jordan.lee@sycamoreinformatics.com,neutral,0,2026-07-29
+12,Denali,active,sushma.r@sycamoreinformatics.com,sam.patel@sycamoreinformatics.com,alex.rivera@sycamoreinformatics.com,neutral,0,2026-07-29
