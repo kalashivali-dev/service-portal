@@ -1916,10 +1916,6 @@
 
       <!-- ===== CUSTOMER DETAILS ===== -->
       <section class="page" id="page-customer">
-        <div class="page-header">
-          <h2 id="customer-title">Customer Details</h2>
-          <p id="customer-subtitle">Weekly updates and presentation data</p>
-        </div>
 
         <!-- Week Selection Dropdown -->
         <div class="week-selector" id="week-selector" style="display: none;">
@@ -2377,9 +2373,7 @@ let currentCustomerData = null;
 async function loadCustomerDetails(customerName) {
   currentCustomer = customerName;
 
-  // Update page title
-  document.getElementById('customer-title').textContent = `${customerName} Details`;
-  document.getElementById('customer-subtitle').textContent = `Weekly updates and presentation data for ${customerName}`;
+  // Page title now handled by the slide content display
 
   // Show loading state
   const loadingEl = document.querySelector('.customer-loading');
