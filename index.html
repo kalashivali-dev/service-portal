@@ -2197,7 +2197,7 @@ async function loadCustomerCards() {
     const customerDetails = await Promise.all(
       customers.map(async customer => {
         try {
-          const customerRes = await fetch(`/api/customer/${customer.name}`);
+          const customerRes = await fetch(`/api/customers/${customer.name}`);
           if (!customerRes.ok) {
             return {
               ...customer,
