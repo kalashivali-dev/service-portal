@@ -2497,16 +2497,6 @@ function renderCustomerFiles(data) {
 
       slideContent = `
         <div class="customer-slide-content">
-          <div class="slide-header">
-            <div class="slide-header-main">
-              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <rect x="3" y="4" width="18" height="12" rx="2" ry="2"/>
-                <line x1="2" y1="20" x2="22" y2="20"/>
-              </svg>
-              <span class="slide-title">Slide ${slide.slideNumber} - ${data.customerName}</span>
-            </div>
-            <div class="slide-match-info">${matchInfo}: "${slide.matchedPattern}"</div>
-          </div>
           <div class="slide-content-display">
             <div class="slide-visual-content">
               <!-- Customer Title -->
@@ -2543,20 +2533,6 @@ function renderCustomerFiles(data) {
 
     return `
       <div class="customer-file-card">
-        <div class="customer-file-header">
-          <div class="customer-file-title">
-            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-            </svg>
-            ${file.fileName}
-          </div>
-          <div class="customer-file-meta">
-            <span class="customer-file-week">${file.week}</span>
-            <span>Created: ${createdDate}</span>
-            ${file.totalSlides ? `<span>Slides: ${file.totalSlides}</span>` : ''}
-          </div>
-        </div>
-
         ${slideContent}
 
         <div class="customer-file-description">
