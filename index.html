@@ -1053,33 +1053,6 @@
     }
 
     /* PowerPoint-style layout */
-    .powerpoint-sentiment {
-      margin-bottom: 16px;
-      font-size: 16px;
-    }
-    .sentiment-label {
-      color: #4A90E2;
-      font-weight: 500;
-    }
-    .sentiment-value.good {
-      background: #22c55e;
-      color: white;
-      padding: 2px 8px;
-      border-radius: 4px;
-      font-weight: 600;
-    }
-    .sentiment-value.poor {
-      background: #ef4444;
-      color: white;
-      padding: 2px 8px;
-      border-radius: 4px;
-      font-weight: 600;
-    }
-    .sentiment-description {
-      font-size: 14px;
-      color: #666;
-      margin-top: 4px;
-    }
 
     .powerpoint-team {
       background: #2d3748;
@@ -2653,12 +2626,6 @@ function renderAllSlideContent(slide, customerName) {
   const organizedContent = organizePowerPointSections(slideText, customerName);
 
   return `
-    <!-- Customer Sentiment -->
-    <div class="powerpoint-sentiment">
-      <span class="sentiment-label">Customer Sentiment - </span>
-      <span class="sentiment-value ${organizedContent.sentiment.status}">${organizedContent.sentiment.value}</span>
-      <div class="sentiment-description">${organizedContent.sentiment.description}</div>
-    </div>
 
     <!-- Team Members -->
     <div class="powerpoint-team">
