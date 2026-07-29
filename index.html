@@ -1820,18 +1820,6 @@
         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
         Dashboard
       </a>
-      <a class="nav-link" data-page="cases" href="#cases">
-        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-        Cases
-      </a>
-      <a class="nav-link" data-page="staff" href="#staff">
-        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
-        Staff
-      </a>
-      <a class="nav-link" data-page="wiki" href="#wiki">
-        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
-        Wiki
-      </a>
 
       <div class="nav-section-label" style="margin-top:12px;">Customers</div>
       <a class="nav-link" data-page="customer" data-customer="AbbVie" href="#customer/AbbVie">
@@ -2107,72 +2095,6 @@
         </div>
       </section>
 
-      <!-- ===== CASES ===== -->
-      <section class="page" id="page-cases">
-        <div class="page-header">
-          <h2>Cases</h2>
-          <p>All service cases, filterable by status.</p>
-        </div>
-
-        <div class="filter-tabs">
-          <button class="filter-tab active" data-filter="all">All</button>
-          <button class="filter-tab" data-filter="open">Open</button>
-          <button class="filter-tab" data-filter="inprogress">In Progress</button>
-          <button class="filter-tab" data-filter="resolved">Resolved</button>
-        </div>
-
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Title</th>
-                <th>Status</th>
-                <th>Assigned To</th>
-                <th>Priority</th>
-                <th>Date</th>
-              </tr>
-            </thead>
-            <tbody id="cases-tbody">
-              <!-- populated by JS -->
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <!-- ===== STAFF ===== -->
-      <section class="page" id="page-staff">
-        <div class="page-header">
-          <h2>Staff</h2>
-          <p>Current team members and their availability.</p>
-        </div>
-        <div class="staff-grid" id="staff-grid">
-          <!-- populated by JS -->
-        </div>
-      </section>
-
-      <!-- ===== WIKI ===== -->
-      <section class="page" id="page-wiki">
-        <div class="page-header">
-          <h2>Knowledge Base</h2>
-          <p>Internal documentation, policies, and guides.</p>
-        </div>
-        <div class="wiki-layout">
-          <aside class="wiki-sidebar">
-            <h3>Articles</h3>
-            <input class="wiki-search" type="search" placeholder="Search articles..." id="wiki-search">
-            <div id="wiki-nav">
-              <!-- populated by JS -->
-            </div>
-          </aside>
-          <div class="wiki-content" id="wiki-content">
-            <div class="wiki-placeholder">
-              <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" display="block" style="margin:0 auto 12px;"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
-              <p>Select an article from the sidebar to read it.</p>
-            </div>
-          </div>
-        </div>
-      </section>
 
       <!-- ===== CUSTOMER DETAILS ===== -->
       <section class="page" id="page-customer">
@@ -2324,35 +2246,10 @@
 // =============================================================================
 // Data
 // =============================================================================
-const CASES = [
-  { id: 'SVC-001', title: 'Network switch offline in Building A',    status: 'Open',        assignedTo: 'Jordan Lee',  priority: 'P1', date: '2026-07-08' },
-  { id: 'SVC-002', title: 'Printer queue stuck on Floor 3',          status: 'In Progress',  assignedTo: 'Sam Patel',   priority: 'P3', date: '2026-07-07' },
-  { id: 'SVC-003', title: 'VPN access request for new contractor',   status: 'Resolved',    assignedTo: 'Jordan Lee',  priority: 'P4', date: '2026-07-06' },
-  { id: 'SVC-004', title: 'Email delivery delays for ops team',      status: 'Open',        assignedTo: 'Alex Rivera', priority: 'P2', date: '2026-07-08' },
-  { id: 'SVC-005', title: 'Conference room AV system broken',        status: 'In Progress',  assignedTo: 'Sam Patel',   priority: 'P3', date: '2026-07-05' },
-  { id: 'SVC-006', title: 'Laptop battery replacement request',      status: 'Resolved',    assignedTo: 'Jordan Lee',  priority: 'P4', date: '2026-07-04' },
-  { id: 'SVC-007', title: 'SSO login loop for marketing tools',      status: 'Open',        assignedTo: 'Alex Rivera', priority: 'P2', date: '2026-07-09' },
-  { id: 'SVC-008', title: 'Onboarding access for Morgan Chen',       status: 'Resolved',    assignedTo: 'Alex Rivera', priority: 'P4', date: '2026-07-03' },
-];
 
-const STAFF = [
-  { name: 'Alex Rivera',  role: 'Service Lead',      dept: 'Operations', email: 'alex@example.com',   status: 'Available' },
-  { name: 'Jordan Lee',   role: 'Support Engineer',  dept: 'Technical',  email: 'jordan@example.com', status: 'Busy'      },
-  { name: 'Sam Patel',    role: 'Field Technician',  dept: 'Field Ops',  email: 'sam@example.com',    status: 'Available' },
-  { name: 'Morgan Chen',  role: 'Analyst',           dept: 'Operations', email: 'morgan@example.com', status: 'OOO'       },
-];
-
-const WIKI_ARTICLES = [
-  { slug: 'index',             title: 'Knowledge Base Index',   file: 'index.md'             },
-  { slug: 'onboarding',        title: 'Onboarding Guide',       file: 'onboarding.md'        },
-  { slug: 'escalation-policy', title: 'Escalation Policy',      file: 'escalation-policy.md' },
-];
 
 const PAGE_TITLES = {
   dashboard: 'Dashboard',
-  cases:     'Cases',
-  staff:     'Staff',
-  wiki:      'Wiki',
   customer:  'Customer Details',
   admin:     'Admin Panel',
 };
@@ -2692,146 +2589,8 @@ function editCustomer(customerId) {
   alert('Customer editing will be implemented in the next version.');
 }
 
-// =============================================================================
-// Cases
-// =============================================================================
-function statusBadgeClass(status) {
-  if (status === 'Open')        return 'badge badge-open';
-  if (status === 'In Progress') return 'badge badge-prog';
-  if (status === 'Resolved')    return 'badge badge-done';
-  return 'badge';
-}
 
-function priorityBadgeClass(p) {
-  const map = { P1: 'badge badge-p1', P2: 'badge badge-p2', P3: 'badge badge-p3', P4: 'badge badge-p4' };
-  return map[p] || 'badge';
-}
 
-function renderCases(filter) {
-  const tbody = document.getElementById('cases-tbody');
-  const filterMap = { all: null, open: 'Open', inprogress: 'In Progress', resolved: 'Resolved' };
-  const statusFilter = filterMap[filter];
-  const rows = CASES.filter(c => !statusFilter || c.status === statusFilter);
-
-  if (rows.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:32px;">No cases found.</td></tr>`;
-    return;
-  }
-
-  tbody.innerHTML = rows.map(c => `
-    <tr>
-      <td class="case-id">${c.id}</td>
-      <td>${c.title}</td>
-      <td><span class="${statusBadgeClass(c.status)}">${c.status}</span></td>
-      <td>${c.assignedTo}</td>
-      <td><span class="${priorityBadgeClass(c.priority)}">${c.priority}</span></td>
-      <td style="color:var(--text-secondary)">${c.date}</td>
-    </tr>
-  `).join('');
-}
-
-function initCases() {
-  renderCases('all');
-  document.querySelectorAll('.filter-tab').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      renderCases(btn.dataset.filter);
-    });
-  });
-}
-
-// =============================================================================
-// Staff
-// =============================================================================
-function staffStatusBadge(status) {
-  if (status === 'Available') return 'badge badge-avail';
-  if (status === 'Busy')      return 'badge badge-busy';
-  return 'badge badge-ooo';
-}
-
-function renderStaff() {
-  const grid = document.getElementById('staff-grid');
-  grid.innerHTML = STAFF.map(s => `
-    <div class="staff-card">
-      <div class="staff-card-header">
-        <div class="staff-avatar">${initials(s.name)}</div>
-        <div>
-          <div class="staff-name">${s.name}</div>
-          <div class="staff-role">${s.role}</div>
-        </div>
-      </div>
-      <div class="staff-meta">
-        <span class="staff-dept">${s.dept}</span>
-        <span class="${staffStatusBadge(s.status)}">${s.status}</span>
-      </div>
-    </div>
-  `).join('');
-}
-
-// =============================================================================
-// Wiki
-// =============================================================================
-let wikiCache = {};
-let activeWikiSlug = null;
-
-function renderWikiNav(query) {
-  const nav = document.getElementById('wiki-nav');
-  const q = (query || '').toLowerCase();
-  const filtered = q
-    ? WIKI_ARTICLES.filter(a => a.title.toLowerCase().includes(q))
-    : WIKI_ARTICLES;
-
-  nav.innerHTML = filtered.map(a => `
-    <button class="wiki-nav-item${activeWikiSlug === a.slug ? ' active' : ''}"
-            data-slug="${a.slug}" data-file="${a.file}">
-      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-      ${a.title}
-    </button>
-  `).join('');
-
-  nav.querySelectorAll('.wiki-nav-item').forEach(btn => {
-    btn.addEventListener('click', () => loadWikiArticle(btn.dataset.slug, btn.dataset.file));
-  });
-}
-
-async function loadWikiArticle(slug, file) {
-  activeWikiSlug = slug;
-  renderWikiNav(document.getElementById('wiki-search').value);
-
-  const contentEl = document.getElementById('wiki-content');
-  if (wikiCache[slug]) {
-    contentEl.innerHTML = `<div class="wiki-body">${wikiCache[slug]}</div>`;
-    return;
-  }
-
-  contentEl.classList.add('loading');
-  contentEl.innerHTML = '<p>Loading article...</p>';
-
-  try {
-    const res = await fetch(`/api/wiki/${file}`);
-    if (!res.ok) {
-      contentEl.classList.remove('loading');
-      contentEl.innerHTML = `<p style="color:var(--p1-txt)">Could not load article (${res.status}).</p>`;
-      return;
-    }
-    const md = await res.text();
-    const html = marked.parse(md);
-    wikiCache[slug] = html;
-    contentEl.classList.remove('loading');
-    contentEl.innerHTML = `<div class="wiki-body">${html}</div>`;
-  } catch (e) {
-    contentEl.classList.remove('loading');
-    contentEl.innerHTML = `<p style="color:var(--p1-txt)">Failed to fetch article: ${e.message}</p>`;
-  }
-}
-
-function initWiki() {
-  renderWikiNav('');
-  document.getElementById('wiki-search').addEventListener('input', e => {
-    renderWikiNav(e.target.value);
-  });
-}
 
 // =============================================================================
 // Customer Details
@@ -3263,7 +3022,7 @@ function initializePowerPointTabs() {
 // =============================================================================
 // SPA routing
 // =============================================================================
-const pages = ['dashboard', 'cases', 'staff', 'wiki', 'customer', 'admin'];
+const pages = ['dashboard', 'customer', 'admin'];
 const pageTitle = document.getElementById('page-title');
 
 function navigateTo(pageId, customerName = null) {
@@ -3376,9 +3135,6 @@ document.getElementById('add-customer-modal')?.addEventListener('click', (e) => 
   await loadUser();
   await checkAdminAccess(); // Check admin permissions early
   await loadStats();
-  initCases();
-  renderStaff();
-  initWiki();
   initializePowerPointTabs(); // Initialize tab functionality
   handleHashChange();
   // Set header timestamp
