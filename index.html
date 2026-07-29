@@ -2426,10 +2426,10 @@ async function loadCustomerCards() {
     const customerCardsGrid = document.getElementById('customer-cards-grid');
     if (!customerCardsGrid) return;
 
-    // Create customer cards with the top customers
-    const topCustomers = customers.slice(0, 6); // Show top 6 customers
+    // Create customer cards for all customers
+    const allCustomers = customers; // Show all customers
 
-    customerCardsGrid.innerHTML = topCustomers.map(customer => {
+    customerCardsGrid.innerHTML = allCustomers.map(customer => {
       const sentimentClass = customer.sentiment || 'neutral';
       const sentimentText = customer.sentiment ?
         customer.sentiment.charAt(0).toUpperCase() + customer.sentiment.slice(1) : 'Neutral';
