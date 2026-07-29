@@ -1430,6 +1430,68 @@ async function handleApiCustomers(req, res, method = 'GET') {
   }
 }
 
+// Extract sentiment information from slide text content
+function extractSentimentFromSlide(textContent) {
+  if (!textContent || !Array.isArray(textContent)) {
+    return {
+      label: 'Neutral',
+      description: 'No sentiment information available'
+    };
+  }
+
+  let sentimentLabel = 'Neutral';
+  let sentimentDescription = 'No sentiment information available';
+
+  // Join all text content for analysis
+  const fullText = textContent.join(' ').toLowerCase();
+
+  // Look for sentiment patterns like "Customer Sentiment - Good" or "Customer Sentiment: Positive"
+  const sentimentMatch = fullText.match(/customer\s+sentiment[\s\-:]+(\w+)/i);
+  if (sentimentMatch) {
+    const rawSentiment = sentimentMatch[1];
+    // Map common sentiment words to our standard format
+    if (rawSentiment.match(/good|positive|excellent|great|satisfied/i)) {
+      sentimentLabel = 'Good';
+    } else if (rawSentiment.match(/bad|negative|poor|unsatisfied|critical/i)) {
+      sentimentLabel = 'Poor';
+    } else if (rawSentiment.match(/neutral|okay|average|mixed/i)) {
+      sentimentLabel = 'Neutral';
+    } else {
+      // Use the raw sentiment with first letter capitalized
+      sentimentLabel = rawSentiment.charAt(0).toUpperCase() + rawSentiment.slice(1).toLowerCase();
+    }
+  }
+
+  // Look for sentiment description - typically the sentence after the sentiment label
+  const lines = textContent.filter(line => line.trim().length > 0);
+  let foundSentimentLine = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].toLowerCase();
+
+    // If we find the sentiment line, the next meaningful line is likely the description
+    if (line.includes('customer sentiment') || foundSentimentLine) {
+      if (foundSentimentLine && lines[i].trim().length > 10) {
+        // This line looks like a description
+        sentimentDescription = lines[i].trim();
+        break;
+      }
+      foundSentimentLine = true;
+    } else if (line.includes('satisfied') || line.includes('customer is') ||
+               line.includes('last critical') || line.includes('ticket') ||
+               line.includes('relationship') || line.includes('performance')) {
+      // This looks like a sentiment description
+      sentimentDescription = lines[i].trim();
+      break;
+    }
+  }
+
+  return {
+    label: sentimentLabel,
+    description: sentimentDescription
+  };
+}
+
 // GET /api/customers/:name — get specific customer data
 async function handleApiCustomerDetails(req, res, customerName) {
   const auth = resolveUser(req);
@@ -1478,12 +1540,27 @@ async function handleApiCustomerDetails(req, res, customerName) {
       week: file.week
     }));
 
+    // Extract sentiment information from the most recent slide
+    let sentimentLabel = 'Neutral';
+    let sentimentDescription = 'No sentiment information available';
+
+    if (filesWithCustomerSlides.length > 0) {
+      const mostRecentFile = filesWithCustomerSlides[0];
+      if (mostRecentFile.customerSlide && mostRecentFile.customerSlide.textContent) {
+        const extracted = extractSentimentFromSlide(mostRecentFile.customerSlide.textContent);
+        sentimentLabel = extracted.label;
+        sentimentDescription = extracted.description;
+      }
+    }
+
     sendJSON(res, 200, {
       customerName: decodedCustomerName,
       files: filesWithCustomerSlides,
       weeks: weeks,
       totalFiles: filesWithCustomerSlides.length,
-      mostRecentWeek: weeks.length > 0 ? weeks[0] : null
+      mostRecentWeek: weeks.length > 0 ? weeks[0] : null,
+      sentimentLabel: sentimentLabel,
+      sentimentDescription: sentimentDescription
     });
   } catch (error) {
     console.error(`Error fetching data for customer ${customerName}:`, error);

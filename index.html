@@ -2190,36 +2190,65 @@ async function loadCustomerCards() {
     const customerCardsGrid = document.getElementById('customer-cards-grid');
     if (!customerCardsGrid) return;
 
-    // Create customer cards for all customers
-    const allCustomers = customers; // Show all customers
+    // Show loading state
+    customerCardsGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 40px;">Loading customer data...</div>';
 
-    customerCardsGrid.innerHTML = allCustomers.map(customer => {
+    // Fetch detailed sentiment data for each customer
+    const customerDetails = await Promise.all(
+      customers.map(async customer => {
+        try {
+          const customerRes = await fetch(`/api/customer/${customer.name}`);
+          if (!customerRes.ok) {
+            return {
+              ...customer,
+              sentimentLabel: customer.sentiment?.charAt(0).toUpperCase() + customer.sentiment?.slice(1) || 'Neutral',
+              sentimentDescription: 'No sentiment details available'
+            };
+          }
+
+          const customerData = await customerRes.json();
+
+          // Use the sentiment information from the API response
+          const sentimentLabel = customerData.sentimentLabel || customer.sentiment?.charAt(0).toUpperCase() + customer.sentiment?.slice(1) || 'Neutral';
+          const sentimentDescription = customerData.sentimentDescription || 'No sentiment details available';
+
+          return {
+            ...customer,
+            sentimentLabel,
+            sentimentDescription
+          };
+        } catch (e) {
+          console.error(`Failed to load details for customer ${customer.name}`, e);
+          return {
+            ...customer,
+            sentimentLabel: customer.sentiment?.charAt(0).toUpperCase() + customer.sentiment?.slice(1) || 'Neutral',
+            sentimentDescription: 'Unable to load sentiment details'
+          };
+        }
+      })
+    );
+
+    // Render customer cards with detailed information
+    customerCardsGrid.innerHTML = customerDetails.map(customer => {
       const sentimentClass = customer.sentiment || 'neutral';
-      const sentimentText = customer.sentiment ?
-        customer.sentiment.charAt(0).toUpperCase() + customer.sentiment.slice(1) : 'Neutral';
-
-      // Create description based on available data
-      let description = `Customer sentiment: ${sentimentText}`;
-      if (customer.openTickets !== undefined) {
-        description += `. Open tickets: ${customer.openTickets}`;
-      }
-      if (customer.csm) {
-        description += `. CSM: ${customer.csm.split('@')[0]}`;
-      }
 
       return `
         <div class="customer-card" onclick="navigateToCustomer('${customer.name}')" role="button" tabindex="0">
           <div class="customer-card-header">
             <h4 class="customer-card-name">${customer.name}</h4>
-            <span class="customer-card-sentiment sentiment-${sentimentClass}">${sentimentText}</span>
+            <span class="customer-card-sentiment sentiment-${sentimentClass}">${customer.sentimentLabel}</span>
           </div>
-          <div class="customer-card-description">${description}</div>
+          <div class="customer-card-description">${customer.sentimentDescription}</div>
         </div>
       `;
     }).join('');
 
   } catch (e) {
     console.error('Failed to load customer cards', e);
+    const customerCardsGrid = document.getElementById('customer-cards-grid');
+    if (customerCardsGrid) {
+      customerCardsGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 40px;">Failed to load customer data</div>';
+    }
   }
 }
 
