@@ -2230,7 +2230,17 @@ async function loadCustomerCards() {
 
     // Render customer cards with detailed information
     customerCardsGrid.innerHTML = customerDetails.map(customer => {
-      const sentimentClass = customer.sentiment || 'neutral';
+      // Map sentiment labels to CSS classes
+      let sentimentClass = 'neutral';
+      const label = (customer.sentimentLabel || '').toLowerCase();
+
+      if (label.includes('good') || label.includes('positive') || label.includes('excellent') || label.includes('satisfied')) {
+        sentimentClass = 'positive';
+      } else if (label.includes('poor') || label.includes('bad') || label.includes('negative') || label.includes('critical')) {
+        sentimentClass = 'negative';
+      } else {
+        sentimentClass = 'neutral';
+      }
 
       return `
         <div class="customer-card" onclick="navigateToCustomer('${customer.name}')" role="button" tabindex="0">
