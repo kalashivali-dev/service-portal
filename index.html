@@ -1938,122 +1938,6 @@
           </div>
         </div>
 
-        <!-- Enhanced Customer Metrics -->
-        <div class="enhanced-metrics" id="enhanced-metrics">
-          <div class="metric-card">
-            <div class="metric-header">
-              <div class="metric-title">Customer Sentiment</div>
-            </div>
-            <div class="metric-value" id="sentiment-score">-</div>
-            <div class="sentiment-bar" id="sentiment-bar">
-              <!-- Populated by JavaScript -->
-            </div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-header">
-              <div class="metric-title">Total Open Tickets</div>
-            </div>
-            <div class="metric-value" id="total-open-tickets">-</div>
-            <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
-              Across <span id="customers-with-tickets">-</span> customers
-            </div>
-          </div>
-        </div>
-
-        <!-- Role Details -->
-        <div class="role-details-grid" id="role-details">
-          <div class="role-detail-card">
-            <div class="role-detail-header">
-              <div class="role-icon csm">👥</div>
-              <div>
-                <div class="role-title">Customer Success Manager</div>
-                <div class="role-subtitle">Primary point of contact</div>
-              </div>
-            </div>
-            <div id="csm-details">
-              <div style="color: var(--text-secondary); font-size: 14px;">Loading...</div>
-            </div>
-          </div>
-          <div class="role-detail-card">
-            <div class="role-detail-header">
-              <div class="role-icon tam">🔧</div>
-              <div>
-                <div class="role-title">Technical Account Manager</div>
-                <div class="role-subtitle">Technical escalation contact</div>
-              </div>
-            </div>
-            <div id="tam-details">
-              <div style="color: var(--text-secondary); font-size: 14px;">Loading...</div>
-            </div>
-          </div>
-          <div class="role-detail-card">
-            <div class="role-detail-header">
-              <div class="role-icon lead">⭐</div>
-              <div>
-                <div class="role-title">Lead Contact</div>
-                <div class="role-subtitle">Leadership and strategy</div>
-              </div>
-            </div>
-            <div id="lead-details">
-              <div style="color: var(--text-secondary); font-size: 14px;">Loading...</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="section-title">Recent Activity</div>
-          <ul class="activity-list">
-            <li class="activity-item">
-              <span class="activity-dot dot-blue"></span>
-              <div>
-                <div class="activity-text">SVC-007 opened — SSO login loop for marketing tools</div>
-                <div class="activity-time">Today, 09:14 AM · Alex Rivera</div>
-              </div>
-            </li>
-            <li class="activity-item">
-              <span class="activity-dot dot-blue"></span>
-              <div>
-                <div class="activity-text">SVC-001 opened — Network switch offline in Building A</div>
-                <div class="activity-time">Yesterday, 04:32 PM · Jordan Lee</div>
-              </div>
-            </li>
-            <li class="activity-item">
-              <span class="activity-dot dot-amber"></span>
-              <div>
-                <div class="activity-text">SVC-002 moved to In Progress — Printer queue stuck</div>
-                <div class="activity-time">Yesterday, 02:11 PM · Sam Patel</div>
-              </div>
-            </li>
-            <li class="activity-item">
-              <span class="activity-dot dot-amber"></span>
-              <div>
-                <div class="activity-text">SVC-005 moved to In Progress — Conference room AV</div>
-                <div class="activity-time">2 days ago · Sam Patel</div>
-              </div>
-            </li>
-            <li class="activity-item">
-              <span class="activity-dot dot-green"></span>
-              <div>
-                <div class="activity-text">SVC-003 resolved — VPN access for new contractor</div>
-                <div class="activity-time">2 days ago · Jordan Lee</div>
-              </div>
-            </li>
-            <li class="activity-item">
-              <span class="activity-dot dot-green"></span>
-              <div>
-                <div class="activity-text">SVC-006 resolved — Laptop battery replacement</div>
-                <div class="activity-time">3 days ago · Jordan Lee</div>
-              </div>
-            </li>
-            <li class="activity-item">
-              <span class="activity-dot dot-green"></span>
-              <div>
-                <div class="activity-text">SVC-008 resolved — Onboarding access for Morgan Chen</div>
-                <div class="activity-time">4 days ago · Alex Rivera</div>
-              </div>
-            </li>
-          </ul>
-        </div>
       </section>
 
 
@@ -2293,37 +2177,6 @@ document.getElementById('logout-btn').addEventListener('click', () => {
 });
 
 
-// Load role contact details
-async function loadRoleDetails() {
-  try {
-    const res = await fetch('/api/customers');
-    if (!res.ok) return;
-
-    const data = await res.json();
-    const customers = data.customers || [];
-
-    // Extract unique contacts by role
-    const csmContacts = [...new Set(customers.map(c => c.csm).filter(Boolean))];
-    const tamContacts = [...new Set(customers.map(c => c.tam).filter(Boolean))];
-    const leadContacts = [...new Set(customers.map(c => c.lead).filter(Boolean))];
-
-    // Update role details
-    document.getElementById('csm-details').innerHTML = csmContacts.length > 0 ?
-      csmContacts.map(email => `<div style="font-size: 14px; color: var(--text-primary);">${email}</div>`).join('') :
-      '<div style="color: var(--text-muted); font-size: 14px;">No CSM assigned</div>';
-
-    document.getElementById('tam-details').innerHTML = tamContacts.length > 0 ?
-      tamContacts.map(email => `<div style="font-size: 14px; color: var(--text-primary);">${email}</div>`).join('') :
-      '<div style="color: var(--text-muted); font-size: 14px;">No TAM assigned</div>';
-
-    document.getElementById('lead-details').innerHTML = leadContacts.length > 0 ?
-      leadContacts.map(email => `<div style="font-size: 14px; color: var(--text-primary);">${email}</div>`).join('') :
-      '<div style="color: var(--text-muted); font-size: 14px;">No Lead assigned</div>';
-
-  } catch (e) {
-    console.error('Failed to load role details', e);
-  }
-}
 
 // Load customer cards for dashboard
 async function loadCustomerCards() {
@@ -3045,7 +2898,6 @@ document.getElementById('add-customer-modal')?.addEventListener('click', (e) => 
 (async function init() {
   await loadUser();
   await checkAdminAccess(); // Check admin permissions early
-  loadRoleDetails();
   loadCustomerCards();
   initializePowerPointTabs(); // Initialize tab functionality
   handleHashChange();
