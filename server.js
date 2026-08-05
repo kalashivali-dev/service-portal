@@ -875,6 +875,239 @@ function extractBusinessMetrics(documentContent) {
   return metrics;
 }
 
+// Generate category-specific AI summaries
+function generateCategoryAnalysis(documentContent, category) {
+  const categoryDocs = documentContent.filter(d => d.category === category.toUpperCase());
+  if (categoryDocs.length === 0) return null;
+
+  const categoryText = categoryDocs.map(d => d.content).join(' ').toLowerCase();
+  const businessMetrics = extractBusinessMetrics(categoryDocs);
+
+  switch (category.toLowerCase()) {
+    case 'sow':
+      return generateSOWAnalysis(categoryDocs, businessMetrics);
+    case 'raci':
+      return generateRACIAnalysis(categoryDocs, businessMetrics);
+    case 'raid':
+      return generateRAIDAnalysis(categoryDocs, businessMetrics);
+    case 'kyc':
+      return generateKYCAnalysis(categoryDocs, businessMetrics);
+    default:
+      return null;
+  }
+}
+
+function generateSOWAnalysis(sowDocs, metrics) {
+  const analysis = {
+    title: "SOW Analysis Summary",
+    documentsAnalyzed: sowDocs.length,
+    keyFindings: [],
+    businessMetrics: {},
+    summary: ""
+  };
+
+  // Extract key SOW insights
+  const sowText = sowDocs.map(d => d.content).join(' ').toLowerCase();
+
+  // Product and user analysis
+  if (metrics.users.length > 0) {
+    const totalUsers = metrics.users.reduce((sum, u) => sum + u.count, 0);
+    const maxUsers = Math.max(...metrics.users.map(u => u.count));
+    analysis.keyFindings.push(`User Base: ${totalUsers.toLocaleString()} total users across systems (peak: ${maxUsers.toLocaleString()})`);
+    analysis.businessMetrics.totalUsers = totalUsers;
+  }
+
+  if (metrics.products.length > 0) {
+    const uniqueProducts = [...new Set(metrics.products.map(p => p.name))];
+    analysis.keyFindings.push(`Product Portfolio: ${uniqueProducts.length} products - ${uniqueProducts.slice(0, 3).join(', ')}${uniqueProducts.length > 3 ? ` +${uniqueProducts.length - 3} more` : ''}`);
+    analysis.businessMetrics.products = uniqueProducts;
+  }
+
+  if (metrics.addOns.length > 0) {
+    const uniqueAddons = [...new Set(metrics.addOns.map(a => a.name))];
+    analysis.keyFindings.push(`Add-ons & Extensions: ${uniqueAddons.length} additional modules identified`);
+    analysis.businessMetrics.addOns = uniqueAddons.length;
+  }
+
+  if (metrics.contracts.value) {
+    analysis.keyFindings.push(`Contract Value: $${metrics.contracts.value} identified in SOW scope`);
+    analysis.businessMetrics.contractValue = metrics.contracts.value;
+  }
+
+  // SOW-specific patterns
+  const sowPatterns = {
+    phases: (sowText.match(/phase \d+|phase \w+/gi) || []).length,
+    milestones: (sowText.match(/milestone|deliverable/gi) || []).length,
+    timelines: (sowText.match(/timeline|schedule|deadline|duration/gi) || []).length,
+    implementations: (sowText.match(/implement|deploy|go[- ]?live|rollout/gi) || []).length
+  };
+
+  if (sowPatterns.phases > 0) {
+    analysis.keyFindings.push(`Project Structure: ${sowPatterns.phases} project phases with ${sowPatterns.milestones} deliverables identified`);
+  }
+
+  if (sowPatterns.implementations > 0) {
+    analysis.keyFindings.push(`Implementation Scope: ${sowPatterns.implementations} implementation activities across ${sowDocs.length} SOW documents`);
+  }
+
+  // Generate summary
+  analysis.summary = `Analysis of ${sowDocs.length} SOW documents reveals ${analysis.keyFindings.length > 0 ? 'comprehensive project scope' : 'standard project documentation'}` +
+    `${metrics.users.length > 0 ? ` for ${metrics.users.reduce((sum, u) => sum + u.count, 0).toLocaleString()} users` : ''}` +
+    `${metrics.products.length > 0 ? ` across ${[...new Set(metrics.products.map(p => p.name))].length} products` : ''}.` +
+    ` Key focus areas include project phases, deliverables, and implementation timelines.`;
+
+  return analysis;
+}
+
+function generateRACIAnalysis(raciDocs, metrics) {
+  const analysis = {
+    title: "RACI Matrix Analysis",
+    documentsAnalyzed: raciDocs.length,
+    keyFindings: [],
+    stakeholderMetrics: {},
+    summary: ""
+  };
+
+  const raciText = raciDocs.map(d => d.content).join(' ').toLowerCase();
+
+  // RACI role analysis
+  const rolePatterns = {
+    responsible: (raciText.match(/responsible/gi) || []).length,
+    accountable: (raciText.match(/accountable/gi) || []).length,
+    consulted: (raciText.match(/consulted/gi) || []).length,
+    informed: (raciText.match(/informed/gi) || []).length,
+    sponsor: (raciText.match(/sponsor/gi) || []).length,
+    owner: (raciText.match(/owner/gi) || []).length,
+    manager: (raciText.match(/manager/gi) || []).length
+  };
+
+  const totalRoles = Object.values(rolePatterns).reduce((sum, count) => sum + count, 0);
+  analysis.stakeholderMetrics = rolePatterns;
+
+  if (totalRoles > 0) {
+    analysis.keyFindings.push(`Stakeholder Structure: ${totalRoles} role assignments across ${raciDocs.length} RACI document(s)`);
+
+    const topRoles = Object.entries(rolePatterns)
+      .filter(([role, count]) => count > 0)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3);
+
+    analysis.keyFindings.push(`Primary Roles: ${topRoles.map(([role, count]) => `${count} ${role}`).join(', ')}`);
+  }
+
+  // Governance analysis
+  const governancePatterns = (raciText.match(/governance|oversight|decision|approval/gi) || []).length;
+  if (governancePatterns > 0) {
+    analysis.keyFindings.push(`Governance Framework: ${governancePatterns} governance-related assignments identified`);
+  }
+
+  // Team structure analysis
+  const teamPatterns = (raciText.match(/team|group|committee|board/gi) || []).length;
+  if (teamPatterns > 0) {
+    analysis.keyFindings.push(`Team Structure: ${teamPatterns} team-based assignments and committees`);
+  }
+
+  analysis.summary = `RACI analysis of ${raciDocs.length} document(s) shows ${totalRoles > 10 ? 'well-defined' : totalRoles > 5 ? 'moderate' : 'limited'} ` +
+    `stakeholder structure with ${totalRoles} role assignments. ` +
+    `${totalRoles > 10 ? 'Strong governance framework supports project accountability.' : 'Additional role clarification may benefit project execution.'}`;
+
+  return analysis;
+}
+
+function generateRAIDAnalysis(raidDocs, metrics) {
+  const analysis = {
+    title: "RAID Log Analysis",
+    documentsAnalyzed: raidDocs.length,
+    keyFindings: [],
+    raidMetrics: {},
+    summary: ""
+  };
+
+  const raidText = raidDocs.map(d => d.content).join(' ').toLowerCase();
+
+  // RAID element counting
+  const raidCounts = {
+    risks: (raidText.match(/risk/gi) || []).length,
+    assumptions: (raidText.match(/assumption/gi) || []).length,
+    issues: (raidText.match(/issue/gi) || []).length,
+    dependencies: (raidText.match(/dependency|dependencies/gi) || []).length
+  };
+
+  analysis.raidMetrics = raidCounts;
+
+  if (raidCounts.risks > 0) {
+    analysis.keyFindings.push(`Risk Profile: ${raidCounts.risks} risk items documented and tracked`);
+  }
+
+  if (raidCounts.issues > 0) {
+    analysis.keyFindings.push(`Active Issues: ${raidCounts.issues} issues requiring resolution and management`);
+  }
+
+  if (raidCounts.dependencies > 0) {
+    analysis.keyFindings.push(`Dependencies: ${raidCounts.dependencies} project dependencies identified`);
+  }
+
+  if (raidCounts.assumptions > 0) {
+    analysis.keyFindings.push(`Assumptions: ${raidCounts.assumptions} project assumptions documented`);
+  }
+
+  // Priority analysis
+  const priorityPatterns = {
+    high: (raidText.match(/high priority|high risk|critical/gi) || []).length,
+    medium: (raidText.match(/medium priority|medium risk|moderate/gi) || []).length,
+    low: (raidText.match(/low priority|low risk|minor/gi) || []).length
+  };
+
+  const totalPriority = Object.values(priorityPatterns).reduce((sum, count) => sum + count, 0);
+  if (totalPriority > 0) {
+    analysis.keyFindings.push(`Priority Distribution: ${priorityPatterns.high} high, ${priorityPatterns.medium} medium, ${priorityPatterns.low} low priority items`);
+  }
+
+  // Mitigation analysis
+  const mitigationPatterns = (raidText.match(/mitigate|mitigation|action plan|resolution/gi) || []).length;
+  if (mitigationPatterns > 0) {
+    analysis.keyFindings.push(`Mitigation Strategies: ${mitigationPatterns} mitigation actions and resolution plans identified`);
+  }
+
+  const totalItems = Object.values(raidCounts).reduce((sum, count) => sum + count, 0);
+  analysis.summary = `RAID log analysis reveals ${totalItems} total items across ${raidDocs.length} document(s): ` +
+    `${raidCounts.risks} risks, ${raidCounts.issues} issues, ${raidCounts.assumptions} assumptions, ${raidCounts.dependencies} dependencies. ` +
+    `${raidCounts.risks + raidCounts.issues > 10 ? 'High activity level requires active management.' : 'Standard monitoring recommended.'}`;
+
+  return analysis;
+}
+
+function generateKYCAnalysis(kycDocs, metrics) {
+  const analysis = {
+    title: "Know Your Customer Analysis",
+    documentsAnalyzed: kycDocs.length,
+    keyFindings: [],
+    customerProfile: {},
+    summary: ""
+  };
+
+  const kycText = kycDocs.map(d => d.content).join(' ').toLowerCase();
+
+  // Customer profile elements
+  const profileElements = {
+    business: (kycText.match(/business|company|organization|enterprise/gi) || []).length,
+    industry: (kycText.match(/industry|sector|market|domain/gi) || []).length,
+    stakeholders: (kycText.match(/stakeholder|executive|leadership|sponsor/gi) || []).length,
+    processes: (kycText.match(/process|workflow|procedure|operation/gi) || []).length
+  };
+
+  Object.entries(profileElements).forEach(([element, count]) => {
+    if (count > 0) {
+      analysis.keyFindings.push(`${element.charAt(0).toUpperCase() + element.slice(1)} Context: ${count} references identified`);
+    }
+  });
+
+  analysis.summary = `KYC analysis of ${kycDocs.length} document(s) provides comprehensive customer profile with ` +
+    `${Object.values(profileElements).reduce((sum, count) => sum + count, 0)} contextual references for strategic decision making.`;
+
+  return analysis;
+}
+
 function analyzeDocumentsStructured(customerName, documentContent) {
   // Store content in binary format for faster future access
   const binaryData = storeBinaryContent(customerName, documentContent);
@@ -1129,6 +1362,15 @@ function analyzeDocumentsStructured(customerName, documentContent) {
     `${categories.includes('SOW') ? 'Active project engagement' : 'Standard documentation review'} ` +
     `${riskKeywords.some(kw => allText.includes(kw)) ? 'with risk factors requiring attention' : 'with standard monitoring recommended'}.`;
 
+  // Generate category-specific analyses
+  const categoryAnalyses = {};
+  ['sow', 'raci', 'raid', 'kyc'].forEach(category => {
+    const analysis = generateCategoryAnalysis(documentContent, category);
+    if (analysis) {
+      categoryAnalyses[category] = analysis;
+    }
+  });
+
   return {
     summary,
     keyInsights: insights.slice(0, 8), // Increased to accommodate more business metrics
@@ -1143,7 +1385,8 @@ function analyzeDocumentsStructured(customerName, documentContent) {
       contractValue: businessMetrics.contracts.value,
       riskCount: businessMetrics.risks.length,
       documentsWithMetrics: documentContent.length
-    }
+    },
+    categoryAnalyses: categoryAnalyses
   };
 }
 

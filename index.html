@@ -1514,6 +1514,144 @@
       border-bottom: 1px solid var(--border-light);
     }
 
+    /* Category Analysis Styles */
+    .category-analysis-summary {
+      background: var(--bg-surface2);
+      border: 1px solid var(--border-light);
+      border-left-width: 4px;
+      border-radius: var(--radius-sm);
+      margin-bottom: 16px;
+      padding: 16px;
+      transition: var(--transition);
+    }
+
+    .category-analysis-summary:hover {
+      background: var(--bg-hover);
+    }
+
+    .category-analysis-placeholder {
+      background: var(--bg-surface2);
+      border: 1px dashed var(--border-light);
+      border-radius: var(--radius-sm);
+      margin-bottom: 16px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .analysis-placeholder-content {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    .category-analysis-header {
+      margin-bottom: 12px;
+    }
+
+    .category-analysis-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-primary);
+      font-size: 14px;
+    }
+
+    .category-icon {
+      font-size: 16px;
+    }
+
+    .docs-count {
+      color: var(--text-muted);
+      font-size: 12px;
+      font-weight: normal;
+    }
+
+    .category-analysis-content {
+      color: var(--text-secondary);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .analysis-summary {
+      margin-bottom: 12px;
+    }
+
+    .analysis-summary p {
+      margin: 0;
+      font-weight: 500;
+    }
+
+    .key-findings {
+      margin-bottom: 12px;
+    }
+
+    .key-findings h5 {
+      margin: 0 0 8px 0;
+      font-size: 13px;
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    .key-findings ul {
+      margin: 0;
+      padding-left: 16px;
+      list-style-type: disc;
+    }
+
+    .key-findings li {
+      margin-bottom: 4px;
+      font-size: 13px;
+    }
+
+    .business-metrics-summary,
+    .stakeholder-metrics-summary,
+    .raid-metrics-summary {
+      margin-top: 12px;
+    }
+
+    .metrics-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .metric-item {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-sm);
+      padding: 6px 10px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      white-space: nowrap;
+    }
+
+    .metric-item strong {
+      color: var(--text-primary);
+    }
+
+    .risk-metric {
+      border-color: var(--p1-txt);
+      background: var(--p1-bg);
+    }
+
+    .issue-metric {
+      border-color: var(--p2-txt);
+      background: var(--p2-bg);
+    }
+
+    .assumption-metric {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+    }
+
+    .dependency-metric {
+      border-color: var(--p3-txt);
+      background: var(--p3-bg);
+    }
+
     /* Customer Documents Styles */
     .customer-documents-container {
       padding: 24px;
@@ -2991,6 +3129,7 @@ function renderDocumentsSection(data) {
               </svg>
               Statement of Work (SOW) - ${(data.documents?.sow?.length || 0)} items
             </h3>
+            ${renderCategoryAnalysis(data.aiAnalysis?.categoryAnalyses?.sow, 'sow')}
             <div class="documents-list">
               ${renderDocumentsList(data.documents?.sow || [], 'sow')}
             </div>
@@ -3005,6 +3144,7 @@ function renderDocumentsSection(data) {
               </svg>
               RACI Matrix - ${(data.documents?.raci?.length || 0)} items
             </h3>
+            ${renderCategoryAnalysis(data.aiAnalysis?.categoryAnalyses?.raci, 'raci')}
             <div class="documents-list">
               ${renderDocumentsList(data.documents?.raci || [], 'raci')}
             </div>
@@ -3018,6 +3158,7 @@ function renderDocumentsSection(data) {
               </svg>
               RAID Log - ${(data.documents?.raid?.length || 0)} items
             </h3>
+            ${renderCategoryAnalysis(data.aiAnalysis?.categoryAnalyses?.raid, 'raid')}
             <div class="documents-list">
               ${renderDocumentsList(data.documents?.raid || [], 'raid')}
             </div>
@@ -3031,6 +3172,7 @@ function renderDocumentsSection(data) {
               </svg>
               Know Your Customer (KYC) - ${(data.documents?.kyc?.length || 0)} items
             </h3>
+            ${renderCategoryAnalysis(data.aiAnalysis?.categoryAnalyses?.kyc, 'kyc')}
             <div class="documents-list">
               ${renderDocumentsList(data.documents?.kyc || [], 'kyc')}
             </div>
@@ -3203,6 +3345,96 @@ function renderCustomerDocuments(data) {
 
   filesEl.innerHTML = documentsHtml;
   weekSelector.style.display = 'none'; // Hide old week selector
+}
+
+// Render category-specific AI analysis summary
+function renderCategoryAnalysis(analysis, category) {
+  if (!analysis) {
+    return `
+      <div class="category-analysis-placeholder">
+        <div class="analysis-placeholder-content">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M12 1v6M12 17v6M4.22 4.22l4.24 4.24M15.54 15.54l4.24 4.24M1 12h6M17 12h6M4.22 19.78l4.24-4.24M15.54 8.46l4.24-4.24"/>
+          </svg>
+          <span>AI analysis will appear here after processing ${category.toUpperCase()} documents...</span>
+        </div>
+      </div>
+    `;
+  }
+
+  const categoryColors = {
+    sow: '#6366f1', // Purple for SOW
+    raci: '#10b981', // Green for RACI
+    raid: '#f59e0b', // Orange for RAID
+    kyc: '#3b82f6'  // Blue for KYC
+  };
+
+  const categoryIcons = {
+    sow: '📋',
+    raci: '👥',
+    raid: '⚠️',
+    kyc: '🔍'
+  };
+
+  return `
+    <div class="category-analysis-summary" style="border-left-color: ${categoryColors[category]}">
+      <div class="category-analysis-header">
+        <div class="category-analysis-title">
+          <span class="category-icon">${categoryIcons[category]}</span>
+          <strong>${analysis.title}</strong>
+          <span class="docs-count">(${analysis.documentsAnalyzed} docs analyzed)</span>
+        </div>
+      </div>
+
+      <div class="category-analysis-content">
+        <div class="analysis-summary">
+          <p>${analysis.summary}</p>
+        </div>
+
+        ${analysis.keyFindings && analysis.keyFindings.length > 0 ? `
+          <div class="key-findings">
+            <h5>Key Findings:</h5>
+            <ul>
+              ${analysis.keyFindings.map(finding => `<li>${finding}</li>`).join('')}
+            </ul>
+          </div>
+        ` : ''}
+
+        ${category === 'sow' && analysis.businessMetrics ? `
+          <div class="business-metrics-summary">
+            <div class="metrics-grid">
+              ${analysis.businessMetrics.totalUsers ? `<div class="metric-item">👥 <strong>${analysis.businessMetrics.totalUsers.toLocaleString()}</strong> users</div>` : ''}
+              ${analysis.businessMetrics.products ? `<div class="metric-item">📦 <strong>${analysis.businessMetrics.products.length}</strong> products</div>` : ''}
+              ${analysis.businessMetrics.addOns ? `<div class="metric-item">🔧 <strong>${analysis.businessMetrics.addOns}</strong> add-ons</div>` : ''}
+              ${analysis.businessMetrics.contractValue ? `<div class="metric-item">💰 <strong>$${analysis.businessMetrics.contractValue}</strong></div>` : ''}
+            </div>
+          </div>
+        ` : ''}
+
+        ${category === 'raci' && analysis.stakeholderMetrics ? `
+          <div class="stakeholder-metrics-summary">
+            <div class="metrics-grid">
+              ${Object.entries(analysis.stakeholderMetrics).filter(([role, count]) => count > 0).map(([role, count]) =>
+                `<div class="metric-item">${role.charAt(0).toUpperCase() + role.slice(1)}: <strong>${count}</strong></div>`
+              ).join('')}
+            </div>
+          </div>
+        ` : ''}
+
+        ${category === 'raid' && analysis.raidMetrics ? `
+          <div class="raid-metrics-summary">
+            <div class="metrics-grid">
+              ${analysis.raidMetrics.risks ? `<div class="metric-item risk-metric">🔴 <strong>${analysis.raidMetrics.risks}</strong> risks</div>` : ''}
+              ${analysis.raidMetrics.issues ? `<div class="metric-item issue-metric">🟠 <strong>${analysis.raidMetrics.issues}</strong> issues</div>` : ''}
+              ${analysis.raidMetrics.assumptions ? `<div class="metric-item assumption-metric">🔵 <strong>${analysis.raidMetrics.assumptions}</strong> assumptions</div>` : ''}
+              ${analysis.raidMetrics.dependencies ? `<div class="metric-item dependency-metric">🟡 <strong>${analysis.raidMetrics.dependencies}</strong> dependencies</div>` : ''}
+            </div>
+          </div>
+        ` : ''}
+      </div>
+    </div>
+  `;
 }
 
 function renderDocumentsList(documents, category) {
