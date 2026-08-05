@@ -768,6 +768,113 @@ function storeBinaryContent(customerName, documentContent) {
   return binaryData;
 }
 
+// Enhanced analysis with business metrics extraction
+function extractBusinessMetrics(documentContent) {
+  const metrics = {
+    users: [],
+    products: [],
+    addOns: [],
+    tickets: {},
+    contracts: {},
+    risks: [],
+    stakeholders: []
+  };
+
+  documentContent.forEach(doc => {
+    const content = doc.content.toLowerCase();
+    const lines = content.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+
+    // Extract user counts and product information
+    lines.forEach(line => {
+      // User count patterns: "1000 users", "users: 500", "user count: 2500"
+      const userMatches = line.match(/(?:users?[:\s]*|user\s+count[:\s]*|total\s+users?[:\s]*)(\d+(?:,\d{3})*)/i);
+      if (userMatches) {
+        const count = parseInt(userMatches[1].replace(/,/g, ''));
+        metrics.users.push({ count, source: doc.fileName, context: line });
+      }
+
+      // Product patterns: "Sycamore EHR", "Clinical Module", "Analytics Platform"
+      const productPatterns = [
+        /sycamore\s+(ehr|clinical|analytics|platform|suite)/gi,
+        /(clinical|analytics|reporting|integration|workflow)\s+(module|platform|system)/gi,
+        /(ehr|emr|clinical\s+decision|patient\s+portal)/gi
+      ];
+
+      productPatterns.forEach(pattern => {
+        const matches = line.match(pattern);
+        if (matches) {
+          matches.forEach(match => {
+            if (!metrics.products.find(p => p.name.toLowerCase() === match.toLowerCase())) {
+              metrics.products.push({ name: match, source: doc.fileName, context: line });
+            }
+          });
+        }
+      });
+
+      // Add-on module patterns
+      const addonPatterns = [
+        /(add[-\s]?on|module|plugin|extension)[:\s]*([a-zA-Z\s]+(?:module|plugin|addon|extension))/gi,
+        /(premium|advanced|enterprise|professional)\s+(features?|modules?|packages?)/gi
+      ];
+
+      addonPatterns.forEach(pattern => {
+        const matches = line.match(pattern);
+        if (matches) {
+          matches.forEach(match => {
+            metrics.addOns.push({ name: match, source: doc.fileName, context: line });
+          });
+        }
+      });
+
+      // Ticket metrics: "50 tickets", "ticket count: 120", "open tickets: 25"
+      const ticketMatches = line.match(/(open|closed|total|pending)?\s*tickets?[:\s]*(\d+)/gi);
+      if (ticketMatches) {
+        ticketMatches.forEach(match => {
+          const parts = match.match(/(open|closed|total|pending)?\s*tickets?[:\s]*(\d+)/i);
+          if (parts) {
+            const type = parts[1] || 'total';
+            const count = parseInt(parts[2]);
+            metrics.tickets[type] = (metrics.tickets[type] || 0) + count;
+          }
+        });
+      }
+
+      // Contract values and dates
+      const contractMatches = line.match(/(?:contract|value|amount)[:\s]*\$?([\d,]+(?:\.\d{2})?)/gi);
+      if (contractMatches) {
+        contractMatches.forEach(match => {
+          const value = match.match(/\$?([\d,]+(?:\.\d{2})?)/);
+          if (value) {
+            metrics.contracts.value = value[1];
+            metrics.contracts.source = doc.fileName;
+          }
+        });
+      }
+
+      // Risk extraction with severity
+      const riskPatterns = [
+        /(high|medium|low|critical)\s+(risk|priority)[:\s]*([^.]+)/gi,
+        /risk[:\s]*([^.]+)(?:severity|priority)[:\s]*(high|medium|low|critical)/gi
+      ];
+
+      riskPatterns.forEach(pattern => {
+        const matches = line.match(pattern);
+        if (matches) {
+          matches.forEach(match => {
+            metrics.risks.push({
+              description: match,
+              source: doc.fileName,
+              category: doc.category
+            });
+          });
+        }
+      });
+    });
+  });
+
+  return metrics;
+}
+
 function analyzeDocumentsStructured(customerName, documentContent) {
   // Store content in binary format for faster future access
   const binaryData = storeBinaryContent(customerName, documentContent);
@@ -788,31 +895,96 @@ function analyzeDocumentsStructured(customerName, documentContent) {
     neutral: ['neutral', 'average', 'standard', 'ongoing', 'in progress']
   };
 
-  // Generate insights based on comprehensive content analysis
+  // Extract business metrics first
+  const businessMetrics = extractBusinessMetrics(documentContent);
+
+  // Generate insights based on comprehensive content analysis with business metrics
   const insights = [];
   const risks = [];
   const opportunities = [];
   const recommendations = [];
 
-  // Analyze project status from SOW and weekly updates
-  if (categories.includes('SOW') && projectKeywords.some(kw => allText.includes(kw))) {
-    insights.push(`Active project engagement with defined scope and deliverables tracked in SOW documents`);
-    recommendations.push(`Monitor project milestones and deliverable timelines closely`);
-  }
-
-  // Weekly management insights
-  const weeklyMgmtContent = documentContent.filter(d => d.source === 'weekly-management');
-  if (weeklyMgmtContent.length > 0) {
-    insights.push(`${weeklyMgmtContent.length} recent management review(s) available with customer updates`);
-
-    const weeklyText = weeklyMgmtContent.map(d => d.content.toLowerCase()).join(' ');
-    if (sentimentKeywords.positive.some(kw => weeklyText.includes(kw))) {
-      opportunities.push(`Recent management reviews indicate positive customer sentiment`);
-    } else if (sentimentKeywords.negative.some(kw => weeklyText.includes(kw))) {
-      risks.push(`Recent management reviews highlight customer concerns requiring attention`);
+  // Enhanced SOW Analysis with Business Metrics
+  const sowContent = documentContent.filter(d => d.category === 'SOW');
+  if (sowContent.length > 0) {
+    // User metrics from SOW
+    if (businessMetrics.users.length > 0) {
+      const totalUsers = businessMetrics.users.reduce((sum, u) => sum + u.count, 0);
+      const maxUsers = Math.max(...businessMetrics.users.map(u => u.count));
+      insights.push(`SOW Analysis: ${totalUsers.toLocaleString()} total users identified${businessMetrics.users.length > 1 ? ` (max: ${maxUsers.toLocaleString()} per system)` : ''}`);
     }
 
-    recommendations.push(`Review latest weekly management presentations for current customer status`);
+    // Product portfolio from SOW
+    if (businessMetrics.products.length > 0) {
+      const uniqueProducts = [...new Set(businessMetrics.products.map(p => p.name))];
+      insights.push(`Product Portfolio: ${uniqueProducts.length} products identified - ${uniqueProducts.slice(0, 3).join(', ')}${uniqueProducts.length > 3 ? ` +${uniqueProducts.length - 3} more` : ''}`);
+
+      if (uniqueProducts.length >= 3) {
+        opportunities.push(`Multi-product deployment provides cross-selling and integration opportunities`);
+      }
+    }
+
+    // Add-on modules analysis
+    if (businessMetrics.addOns.length > 0) {
+      const uniqueAddons = [...new Set(businessMetrics.addOns.map(a => a.name))];
+      insights.push(`Add-on Modules: ${uniqueAddons.length} additional modules/features identified`);
+      opportunities.push(`${uniqueAddons.length} add-on modules suggest high product engagement and expansion potential`);
+    }
+
+    // Contract value insights
+    if (businessMetrics.contracts.value) {
+      insights.push(`Contract Value: $${businessMetrics.contracts.value} identified in SOW documentation`);
+      recommendations.push(`Track contract value realization and ROI metrics for renewal discussions`);
+    }
+
+    if (projectKeywords.some(kw => allText.includes(kw))) {
+      recommendations.push(`Monitor SOW deliverables and user adoption metrics for ${businessMetrics.users.length > 0 ? businessMetrics.users[0].count + ' users' : 'identified user base'}`);
+    }
+  }
+
+  // Enhanced Weekly Management Insights with Ticket Metrics
+  const weeklyMgmtContent = documentContent.filter(d => d.source === 'weekly-management');
+  if (weeklyMgmtContent.length > 0) {
+    const weeklyText = weeklyMgmtContent.map(d => d.content.toLowerCase()).join(' ');
+
+    // Extract ticket metrics from weekly updates
+    if (Object.keys(businessMetrics.tickets).length > 0) {
+      const ticketSummary = Object.entries(businessMetrics.tickets)
+        .map(([type, count]) => `${count} ${type}`)
+        .join(', ');
+      insights.push(`Ticket Metrics: ${ticketSummary} tickets tracked in recent reviews`);
+
+      if (businessMetrics.tickets.open > 20) {
+        risks.push(`High open ticket count (${businessMetrics.tickets.open}) may impact customer satisfaction`);
+      } else if (businessMetrics.tickets.open <= 5) {
+        opportunities.push(`Low open ticket count (${businessMetrics.tickets.open}) indicates stable system performance`);
+      }
+
+      // Calculate ticket resolution insights
+      const totalTickets = Object.values(businessMetrics.tickets).reduce((sum, count) => sum + count, 0);
+      const closedRatio = businessMetrics.tickets.closed ? (businessMetrics.tickets.closed / totalTickets * 100).toFixed(1) : 0;
+      if (closedRatio > 80) {
+        opportunities.push(`Strong ticket resolution rate (${closedRatio}% closed) demonstrates effective support`);
+      }
+
+      recommendations.push(`Monitor ticket trends: ${ticketSummary} - focus on reducing open tickets and improving resolution time`);
+    }
+
+    insights.push(`Weekly Management Reviews: ${weeklyMgmtContent.length} recent update(s) with operational metrics`);
+
+    if (sentimentKeywords.positive.some(kw => weeklyText.includes(kw))) {
+      opportunities.push(`Recent management reviews indicate positive customer sentiment and relationship health`);
+    } else if (sentimentKeywords.negative.some(kw => weeklyText.includes(kw))) {
+      risks.push(`Management reviews highlight customer concerns requiring immediate escalation and resolution`);
+    }
+
+    // Extract specific metrics from weekly content
+    const performanceMetrics = weeklyText.match(/(\d+(?:\.\d+)?%|\d+\s*sla|\d+\s*availability)/gi);
+    if (performanceMetrics && performanceMetrics.length > 0) {
+      insights.push(`Performance Metrics: ${performanceMetrics.slice(0, 3).join(', ')} identified in weekly reviews`);
+    }
+
+    recommendations.push(`Review ${weeklyMgmtContent.length} weekly management update(s) for trending customer health indicators`);
   }
 
   // Weekly CFT technical insights
@@ -831,18 +1003,60 @@ function analyzeDocumentsStructured(customerName, documentContent) {
     recommendations.push(`Coordinate with CFT team on technical implementation status`);
   }
 
-  // Analyze stakeholder structure
-  if (categories.includes('RACI') && stakeholderKeywords.some(kw => allText.includes(kw))) {
-    insights.push(`Clear stakeholder roles and responsibilities defined in RACI documentation`);
-    opportunities.push(`Leverage established stakeholder relationships for project success`);
+  // Enhanced RACI Analysis with Stakeholder Metrics
+  const raciContent = documentContent.filter(d => d.category === 'RACI');
+  if (raciContent.length > 0) {
+    const raciText = raciContent.map(d => d.content).join(' ');
+
+    // Count stakeholder roles
+    const rolePatterns = ['responsible', 'accountable', 'consulted', 'informed', 'sponsor', 'owner', 'manager'];
+    const roleCount = rolePatterns.reduce((count, role) => {
+      const matches = raciText.toLowerCase().match(new RegExp(role, 'gi'));
+      return count + (matches ? matches.length : 0);
+    }, 0);
+
+    insights.push(`RACI Analysis: ${roleCount} stakeholder role assignments identified across ${raciContent.length} document(s)`);
+
+    if (roleCount >= 10) {
+      opportunities.push(`Well-defined stakeholder structure (${roleCount} roles) enables efficient project governance`);
+    } else if (roleCount < 5) {
+      risks.push(`Limited stakeholder role definition (${roleCount} roles) may impact project accountability`);
+    }
+
+    recommendations.push(`Validate RACI assignments with ${roleCount} identified stakeholder roles for project success`);
   }
 
-  // Analyze risk profile from RAID logs and weekly updates
-  if (categories.includes('RAID')) {
-    insights.push(`Risk management framework in place with documented issues and dependencies`);
-    if (riskKeywords.some(kw => allText.includes(kw))) {
-      risks.push(`Active risk items documented in RAID logs requiring attention and mitigation`);
+  // Enhanced RAID Analysis with Risk Metrics
+  const raidContent = documentContent.filter(d => d.category === 'RAID');
+  if (raidContent.length > 0) {
+    const raidText = raidContent.map(d => d.content).join(' ');
+
+    // Count different RAID elements
+    const riskCount = (raidText.match(/risk/gi) || []).length;
+    const issueCount = (raidText.match(/issue/gi) || []).length;
+    const assumptionCount = (raidText.match(/assumption/gi) || []).length;
+    const dependencyCount = (raidText.match(/dependency|dependencies/gi) || []).length;
+
+    insights.push(`RAID Analysis: ${riskCount} risks, ${issueCount} issues, ${assumptionCount} assumptions, ${dependencyCount} dependencies tracked`);
+
+    if (riskCount > 5) {
+      risks.push(`High risk count (${riskCount} risks) requires active mitigation strategies and monitoring`);
     }
+    if (issueCount > 3) {
+      risks.push(`${issueCount} active issues documented - immediate attention required for resolution`);
+    }
+    if (dependencyCount > 5) {
+      risks.push(`${dependencyCount} dependencies identified - potential bottlenecks requiring management`);
+    }
+
+    // Extract high priority risks from business metrics
+    businessMetrics.risks.forEach(risk => {
+      if (risk.description.includes('high') || risk.description.includes('critical')) {
+        risks.push(`Critical Risk: ${risk.description.substring(0, 100)}... (Source: ${risk.source})`);
+      }
+    });
+
+    recommendations.push(`Review ${riskCount + issueCount} active risks and issues in RAID log for mitigation planning`);
   }
 
   // Comprehensive risk analysis from all sources
@@ -886,25 +1100,50 @@ function analyzeDocumentsStructured(customerName, documentContent) {
     recommendations.push(`Regular review of customer documents and weekly updates recommended`);
   }
 
-  // Enhanced executive summary
+  // Enhanced executive summary with business metrics
   const sourceDescription = sources.includes('weekly-management') && sources.includes('weekly-cft')
     ? 'customer-specific documents plus weekly management and technical reviews'
     : sources.includes('weekly-management') || sources.includes('weekly-cft')
     ? 'customer-specific documents plus weekly collaborative reviews'
     : 'customer-specific documentation';
 
+  // Build business metrics summary
+  const metricsHighlights = [];
+  if (businessMetrics.users.length > 0) {
+    const totalUsers = businessMetrics.users.reduce((sum, u) => sum + u.count, 0);
+    metricsHighlights.push(`${totalUsers.toLocaleString()} users`);
+  }
+  if (businessMetrics.products.length > 0) {
+    metricsHighlights.push(`${businessMetrics.products.length} products`);
+  }
+  if (Object.keys(businessMetrics.tickets).length > 0) {
+    const totalTickets = Object.values(businessMetrics.tickets).reduce((sum, count) => sum + count, 0);
+    metricsHighlights.push(`${totalTickets} tickets`);
+  }
+
+  const metricsText = metricsHighlights.length > 0 ? ` Key metrics: ${metricsHighlights.join(', ')}.` : '';
+
   const summary = `${customerName} analysis based on ${documentContent.length} documents from ${sourceDescription}. ` +
     `Coverage includes ${categories.filter(c => !c.startsWith('WEEKLY')).join(', ')} documentation` +
-    `${categories.some(c => c.startsWith('WEEKLY')) ? ' with recent weekly updates' : ''}. ` +
+    `${categories.some(c => c.startsWith('WEEKLY')) ? ' with recent weekly updates' : ''}.${metricsText} ` +
     `${categories.includes('SOW') ? 'Active project engagement' : 'Standard documentation review'} ` +
-    `${riskKeywords.some(kw => allText.includes(kw)) ? 'with risk factors identified' : 'with standard monitoring recommended'}.`;
+    `${riskKeywords.some(kw => allText.includes(kw)) ? 'with risk factors requiring attention' : 'with standard monitoring recommended'}.`;
 
   return {
     summary,
-    keyInsights: insights.slice(0, 6),
-    riskFactors: risks.slice(0, 5),
-    opportunities: opportunities.slice(0, 4),
-    recommendations: recommendations.slice(0, 5)
+    keyInsights: insights.slice(0, 8), // Increased to accommodate more business metrics
+    riskFactors: risks.slice(0, 6),
+    opportunities: opportunities.slice(0, 5),
+    recommendations: recommendations.slice(0, 6),
+    businessMetrics: {
+      totalUsers: businessMetrics.users.reduce((sum, u) => sum + u.count, 0),
+      productCount: [...new Set(businessMetrics.products.map(p => p.name))].length,
+      addonCount: [...new Set(businessMetrics.addOns.map(a => a.name))].length,
+      tickets: businessMetrics.tickets,
+      contractValue: businessMetrics.contracts.value,
+      riskCount: businessMetrics.risks.length,
+      documentsWithMetrics: documentContent.length
+    }
   };
 }
 

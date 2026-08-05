@@ -1367,6 +1367,12 @@
       color: var(--status-done-txt) !important;
     }
 
+    .metric-badge {
+      background: var(--status-prog-bg) !important;
+      color: var(--status-prog-txt) !important;
+      font-weight: 600;
+    }
+
     .ai-analysis-section {
       background: var(--bg-surface);
       border: 2px solid var(--accent);
@@ -2863,6 +2869,9 @@ function renderCustomerAnalysis(data) {
         <div class="document-stats">
           <span class="stat-badge">Total Documents: ${data.totalDocuments || 0}</span>
           <span class="stat-badge analysis-badge">AI Analysis: ${data.documentsSummary?.documentsAnalyzed || 0} docs processed</span>
+          ${data.aiAnalysis?.businessMetrics?.totalUsers ? `<span class="stat-badge metric-badge">👥 ${data.aiAnalysis.businessMetrics.totalUsers.toLocaleString()} Users</span>` : ''}
+          ${data.aiAnalysis?.businessMetrics?.productCount ? `<span class="stat-badge metric-badge">📦 ${data.aiAnalysis.businessMetrics.productCount} Products</span>` : ''}
+          ${data.aiAnalysis?.businessMetrics?.tickets?.total ? `<span class="stat-badge metric-badge">🎫 ${data.aiAnalysis.businessMetrics.tickets.total} Tickets</span>` : ''}
         </div>
       </div>
 
