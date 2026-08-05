@@ -31,7 +31,7 @@ const SESSION_COOKIE_NAME = 'svc_session';
 const SESSION_TTL_MS = 8 * 60 * 60 * 1000; // 8 hours
 
 // Google Drive configuration
-const DRIVE_FOLDER_ID = '1X7xX-jWWgQ0tGYeXKPPvVe0jXzbv74AM';
+const DRIVE_FOLDER_ID = '1gayb-Cs8bFW4yhLddO4U2AGmEcD9hMgX';
 const DRIVE_SCOPES = ['https://www.googleapis.com/auth/drive.readonly'];
 
 // CSV Cache configuration
