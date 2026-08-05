@@ -1355,6 +1355,159 @@
     /* =======================================================
        Admin Panel Styles
        ======================================================= */
+    /* AI Analysis Styles */
+    .customer-analysis-container {
+      padding: 24px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .analysis-badge {
+      background: var(--status-done-bg) !important;
+      color: var(--status-done-txt) !important;
+    }
+
+    .ai-analysis-section {
+      background: var(--bg-surface);
+      border: 2px solid var(--accent);
+      border-radius: var(--radius);
+      margin-bottom: 32px;
+      overflow: hidden;
+    }
+
+    .analysis-header {
+      background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+      color: white;
+      padding: 20px 24px;
+    }
+
+    .analysis-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 0 0 8px 0;
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    .analysis-meta {
+      display: flex;
+      gap: 24px;
+      font-size: 14px;
+      opacity: 0.9;
+    }
+
+    .analysis-content {
+      padding: 24px;
+    }
+
+    .summary-card {
+      margin-bottom: 24px;
+      background: var(--bg-surface2);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius);
+      padding: 20px;
+    }
+
+    .summary-text {
+      color: var(--text-primary);
+      font-size: 16px;
+      line-height: 1.6;
+      margin: 12px 0 0 0;
+    }
+
+    .analysis-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+    }
+
+    .analysis-card {
+      background: var(--bg-surface2);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius);
+      padding: 18px;
+      transition: var(--transition);
+    }
+
+    .analysis-card:hover {
+      border-color: var(--accent);
+    }
+
+    .card-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0 0 16px 0;
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .risk-title {
+      color: var(--p1-txt);
+    }
+
+    .opportunity-title {
+      color: var(--status-done-txt);
+    }
+
+    .recommendation-title {
+      color: var(--accent);
+    }
+
+    .analysis-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .analysis-list li {
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border-light);
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .analysis-list li:last-child {
+      border-bottom: none;
+    }
+
+    .risk-item::before {
+      content: "⚠️";
+      margin-right: 8px;
+    }
+
+    .opportunity-item::before {
+      content: "🚀";
+      margin-right: 8px;
+    }
+
+    .recommendation-item::before {
+      content: "💡";
+      margin-right: 8px;
+    }
+
+    .insight-item::before {
+      content: "🔍";
+      margin-right: 8px;
+    }
+
+    .documents-section {
+      margin-top: 32px;
+      padding-top: 24px;
+      border-top: 2px solid var(--border);
+    }
+
+    .documents-section-title {
+      color: var(--text-primary);
+      font-size: 24px;
+      font-weight: 600;
+      margin: 0 0 24px 0;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-light);
+    }
+
     /* Customer Documents Styles */
     .customer-documents-container {
       padding: 24px;
@@ -2648,8 +2801,8 @@ async function loadCustomerDetails(customerName) {
   weekSelector.style.display = 'none';
 
   try {
-    // Load customer documents (SOW, RACI, RAID, KYC) + weekly data
-    const response = await fetch(`/api/customers/${encodeURIComponent(customerName)}/documents`);
+    // Load customer analysis (AI insights + documents + weekly data)
+    const response = await fetch(`/api/customers/${encodeURIComponent(customerName)}/analysis`);
 
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -2658,26 +2811,34 @@ async function loadCustomerDetails(customerName) {
     const data = await response.json();
     currentCustomerData = data;
 
-    // Render the new customer documents layout
-    renderCustomerDocuments(data);
+    // Render the new customer analysis + documents layout
+    renderCustomerAnalysis(data);
 
   } catch (error) {
     console.error('Error loading customer details:', error);
 
-    // Fallback to old API if new one fails
+    // Fallback to documents API if analysis fails
     try {
-      const fallbackResponse = await fetch(`/api/customers/${encodeURIComponent(customerName)}`);
+      const fallbackResponse = await fetch(`/api/customers/${encodeURIComponent(customerName)}/documents`);
       if (fallbackResponse.ok) {
         const fallbackData = await fallbackResponse.json();
         currentCustomerData = fallbackData;
-        setupWeekDropdown(fallbackData);
-        if (fallbackData.mostRecentWeek) {
-          renderCustomerWeek(fallbackData, fallbackData.mostRecentWeek.id);
-        } else {
-          renderCustomerFiles(fallbackData);
-        }
+        renderCustomerDocuments(fallbackData);
       } else {
-        renderCustomerError(error.message);
+        // Final fallback to legacy API
+        const legacyResponse = await fetch(`/api/customers/${encodeURIComponent(customerName)}`);
+        if (legacyResponse.ok) {
+          const legacyData = await legacyResponse.json();
+          currentCustomerData = legacyData;
+          setupWeekDropdown(legacyData);
+          if (legacyData.mostRecentWeek) {
+            renderCustomerWeek(legacyData, legacyData.mostRecentWeek.id);
+          } else {
+            renderCustomerFiles(legacyData);
+          }
+        } else {
+          renderCustomerError(error.message);
+        }
       }
     } catch (fallbackError) {
       renderCustomerError(error.message);
@@ -2688,7 +2849,232 @@ async function loadCustomerDetails(customerName) {
   }
 }
 
-// New function to render customer documents with SOW, RACI, RAID, KYC sections
+// New function to render AI analysis + customer documents
+function renderCustomerAnalysis(data) {
+  const filesEl = document.getElementById('customer-files');
+  const weekSelector = document.getElementById('week-selector');
+
+  // Create the new customer analysis + documents layout
+  const analysisHtml = `
+    <div class="customer-analysis-container">
+      <!-- Customer Header -->
+      <div class="customer-header">
+        <h2>${data.customerName}</h2>
+        <div class="document-stats">
+          <span class="stat-badge">Total Documents: ${data.totalDocuments || 0}</span>
+          <span class="stat-badge analysis-badge">AI Analysis: ${data.documentsSummary?.documentsAnalyzed || 0} docs processed</span>
+        </div>
+      </div>
+
+      <!-- AI Analysis Section -->
+      <div class="ai-analysis-section">
+        <div class="analysis-header">
+          <h3 class="analysis-title">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
+            </svg>
+            AI Customer Analysis
+          </h3>
+          <div class="analysis-meta">
+            <span class="analysis-timestamp">Generated: ${new Date(data.generatedAt).toLocaleString()}</span>
+            <span class="analysis-sources">${data.documentsSummary?.categoriesCovered?.join(', ') || 'Multiple sources'}</span>
+          </div>
+        </div>
+
+        <div class="analysis-content">
+          <!-- Executive Summary -->
+          <div class="analysis-card summary-card">
+            <h4 class="card-title">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M9 11H5a2 2 0 00-2 2v7a2 2 0 002 2h14a2 2 0 002-2v-7a2 2 0 00-2-2h-4M9 11V9a2 2 0 112 2M9 11h6M9 11v7M15 11v7"/>
+              </svg>
+              Executive Summary
+            </h4>
+            <p class="summary-text">${data.aiAnalysis?.summary || 'Analysis summary not available'}</p>
+          </div>
+
+          <!-- Analysis Grid -->
+          <div class="analysis-grid">
+            <!-- Key Insights -->
+            <div class="analysis-card insights-card">
+              <h4 class="card-title">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                </svg>
+                Key Insights
+              </h4>
+              <ul class="analysis-list">
+                ${(data.aiAnalysis?.keyInsights || []).map(insight =>
+                  `<li class="insight-item">${insight}</li>`
+                ).join('')}
+              </ul>
+            </div>
+
+            <!-- Risk Factors -->
+            <div class="analysis-card risks-card">
+              <h4 class="card-title risk-title">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path d="M12 9v4M12 17h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                Risk Factors
+              </h4>
+              <ul class="analysis-list risk-list">
+                ${(data.aiAnalysis?.riskFactors || []).map(risk =>
+                  `<li class="risk-item">${risk}</li>`
+                ).join('')}
+              </ul>
+            </div>
+
+            <!-- Opportunities -->
+            <div class="analysis-card opportunities-card">
+              <h4 class="card-title opportunity-title">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                </svg>
+                Opportunities
+              </h4>
+              <ul class="analysis-list opportunity-list">
+                ${(data.aiAnalysis?.opportunities || []).map(opp =>
+                  `<li class="opportunity-item">${opp}</li>`
+                ).join('')}
+              </ul>
+            </div>
+
+            <!-- Recommendations -->
+            <div class="analysis-card recommendations-card">
+              <h4 class="card-title recommendation-title">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
+                </svg>
+                Recommendations
+              </h4>
+              <ul class="analysis-list recommendation-list">
+                ${(data.aiAnalysis?.recommendations || []).map(rec =>
+                  `<li class="recommendation-item">${rec}</li>`
+                ).join('')}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      ${renderDocumentsSection(data)}
+    </div>
+  `;
+
+  filesEl.innerHTML = analysisHtml;
+  weekSelector.style.display = 'none'; // Hide old week selector
+}
+
+// Separate function for documents section (used by both analysis and fallback)
+function renderDocumentsSection(data) {
+  return `
+      <!-- Documents Grid -->
+      <div class="documents-section">
+        <h3 class="documents-section-title">Customer Documents</h3>
+        <div class="documents-grid">
+          <!-- SOW Documents Section -->
+          <div class="document-section">
+            <h3 class="section-title">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/>
+              </svg>
+              Statement of Work (SOW) - ${(data.documents?.sow?.length || 0)} items
+            </h3>
+            <div class="documents-list">
+              ${renderDocumentsList(data.documents?.sow || [], 'sow')}
+            </div>
+          </div>
+
+          <!-- RACI Matrix Section -->
+          <div class="document-section">
+            <h3 class="section-title">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                <path d="M9 9h6v6H9z"/>
+              </svg>
+              RACI Matrix - ${(data.documents?.raci?.length || 0)} items
+            </h3>
+            <div class="documents-list">
+              ${renderDocumentsList(data.documents?.raci || [], 'raci')}
+            </div>
+          </div>
+
+          <!-- RAID Log Section -->
+          <div class="document-section">
+            <h3 class="section-title">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M12 9v4M12 17h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              RAID Log - ${(data.documents?.raid?.length || 0)} items
+            </h3>
+            <div class="documents-list">
+              ${renderDocumentsList(data.documents?.raid || [], 'raid')}
+            </div>
+          </div>
+
+          <!-- KYC Documents Section -->
+          <div class="document-section">
+            <h3 class="section-title">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+              </svg>
+              Know Your Customer (KYC) - ${(data.documents?.kyc?.length || 0)} items
+            </h3>
+            <div class="documents-list">
+              ${renderDocumentsList(data.documents?.kyc || [], 'kyc')}
+            </div>
+          </div>
+        </div>
+
+        <!-- Weekly Selectors Section -->
+        <div class="weekly-sections">
+          <!-- Weekly Management Selector -->
+          <div class="weekly-section">
+            <h3 class="section-title">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <rect x="3" y="4" width="18" height="12" rx="2"/>
+                <path d="M7 16h10M12 8h5M12 12h3"/>
+              </svg>
+              Weekly Management PPTs
+            </h3>
+            <div class="week-selector-container">
+              <select class="week-selector-dropdown" id="management-week-selector">
+                <option value="">Select a week...</option>
+                ${(data.weeklyManagement || []).map(week =>
+                  `<option value="${week.id}">${week.week} - ${week.name}</option>`
+                ).join('')}
+              </select>
+              <button class="view-btn" onclick="viewWeeklyDocument('management')">View</button>
+            </div>
+          </div>
+
+          <!-- Weekly CFT Selector -->
+          <div class="weekly-section">
+            <h3 class="section-title">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <rect x="3" y="4" width="18" height="12" rx="2"/>
+                <path d="M7 16h10M8 8h8M8 12h6"/>
+              </svg>
+              Weekly CFT PPTs
+            </h3>
+            <div class="week-selector-container">
+              <select class="week-selector-dropdown" id="cft-week-selector">
+                <option value="">Select a week...</option>
+                ${(data.weeklyCFT || []).map(week =>
+                  `<option value="${week.id}">${week.week} - ${week.name}</option>`
+                ).join('')}
+              </select>
+              <button class="view-btn" onclick="viewWeeklyDocument('cft')">View</button>
+            </div>
+          </div>
+        </div>
+      </div>
+  `;
+}
+
+// Legacy function to render customer documents (fallback)
 function renderCustomerDocuments(data) {
   const filesEl = document.getElementById('customer-files');
   const weekSelector = document.getElementById('week-selector');

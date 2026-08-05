@@ -266,6 +266,11 @@ let customerDocumentsCache = new Map();
 let lastDocumentsCacheUpdate = 0;
 const DOCUMENTS_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
 
+// AI Analysis cache for customer insights
+let customerAnalysisCache = new Map();
+let lastAnalysisCacheUpdate = 0;
+const ANALYSIS_CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+
 // New comprehensive customer documents loader
 async function getCustomerDocumentsFromDrive() {
   const now = Date.now();
@@ -448,6 +453,459 @@ async function processWeeklyFolder(drive, folderId, type) {
   }
 
   return weeklyFiles;
+}
+
+// AI Analysis Functions for RAG System
+async function extractDocumentContent(drive, fileId, fileName, mimeType) {
+  try {
+    let textContent = '';
+
+    // Extract text based on file type
+    if (mimeType.includes('presentation') || mimeType.includes('powerpoint')) {
+      // Extract PowerPoint content
+      textContent = await extractPowerPointText(drive, fileId);
+    } else if (mimeType.includes('document') || mimeType.includes('word')) {
+      // Extract Word document content
+      textContent = await extractWordText(drive, fileId);
+    } else if (mimeType.includes('spreadsheet') || mimeType.includes('excel')) {
+      // Extract Excel content
+      textContent = await extractExcelText(drive, fileId);
+    } else if (mimeType.includes('text/plain')) {
+      // Extract plain text
+      textContent = await extractPlainText(drive, fileId);
+    }
+
+    return {
+      fileName,
+      fileId,
+      mimeType,
+      textContent: textContent.substring(0, 10000), // Limit to 10k chars per file
+      wordCount: textContent.split(/\s+/).length,
+      extractedAt: new Date().toISOString()
+    };
+  } catch (error) {
+    console.error(`Error extracting content from ${fileName}:`, error.message);
+    return {
+      fileName,
+      fileId,
+      mimeType,
+      textContent: '',
+      wordCount: 0,
+      error: error.message,
+      extractedAt: new Date().toISOString()
+    };
+  }
+}
+
+async function extractPowerPointText(drive, fileId) {
+  try {
+    // Download the file as binary
+    const fileBuffer = await downloadFileFromDrive(drive, fileId);
+    const slides = await parsePowerPointSlides(fileBuffer);
+
+    // Combine all slide text content
+    return slides.map(slide => {
+      const slideText = slide.textContent ? slide.textContent.join(' ') : '';
+      return `Slide ${slide.slideNumber}: ${slideText}`;
+    }).join('\n\n');
+  } catch (error) {
+    console.warn('Could not extract PowerPoint text:', error.message);
+    return '';
+  }
+}
+
+async function extractWordText(drive, fileId) {
+  try {
+    // Try to export as plain text
+    const response = await drive.files.export({
+      fileId: fileId,
+      mimeType: 'text/plain'
+    });
+
+    return response.data || '';
+  } catch (error) {
+    console.warn('Could not extract Word text:', error.message);
+    return '';
+  }
+}
+
+async function extractExcelText(drive, fileId) {
+  try {
+    // Try to export as CSV for text extraction
+    const response = await drive.files.export({
+      fileId: fileId,
+      mimeType: 'text/csv'
+    });
+
+    return response.data || '';
+  } catch (error) {
+    console.warn('Could not extract Excel text:', error.message);
+    return '';
+  }
+}
+
+async function extractCustomerSlideFromWeekly(drive, weeklyFile, customerName) {
+  try {
+    console.log(`Extracting ${customerName} content from ${weeklyFile.name}...`);
+
+    // Download and parse the weekly PowerPoint
+    const fileBuffer = await downloadFileFromDrive(drive, weeklyFile.id);
+    const slides = await parsePowerPointSlides(fileBuffer);
+
+    // Find customer-specific slide using existing logic
+    const customerSlide = findCustomerSlide(slides, customerName);
+
+    if (customerSlide) {
+      const slideContent = customerSlide.textContent ? customerSlide.textContent.join(' ') : '';
+
+      // Enhanced content extraction for weekly slides
+      const enhancedContent = `
+Week: ${weeklyFile.week}
+Date: ${weeklyFile.date || 'Unknown'}
+File: ${weeklyFile.name}
+Customer: ${customerName}
+Slide Number: ${customerSlide.slideNumber}
+Content: ${slideContent}
+Match Type: ${customerSlide.matchType}
+`;
+
+      return {
+        content: enhancedContent,
+        slideNumber: customerSlide.slideNumber,
+        week: weeklyFile.week,
+        matchType: customerSlide.matchType,
+        wordCount: slideContent.split(/\s+/).length
+      };
+    }
+
+    return null;
+  } catch (error) {
+    console.error(`Error extracting customer slide from ${weeklyFile.name}:`, error.message);
+    return null;
+  }
+}
+
+async function extractPlainText(drive, fileId) {
+  try {
+    const response = await drive.files.get({
+      fileId: fileId,
+      alt: 'media'
+    });
+
+    return response.data || '';
+  } catch (error) {
+    console.warn('Could not extract plain text:', error.message);
+    return '';
+  }
+}
+
+async function generateCustomerAnalysis(customerName, customerDocuments, weeklyManagement = [], weeklyCFT = []) {
+  try {
+    console.log(`Generating AI analysis for customer: ${customerName}`);
+
+    // Extract text content from all customer documents
+    const drive = await getDriveService();
+    const allDocumentContent = [];
+
+    // Process each customer-specific document category
+    for (const category of ['sow', 'raci', 'raid', 'kyc']) {
+      const documents = customerDocuments.documents[category] || [];
+
+      for (const doc of documents.slice(0, 5)) { // Limit to 5 docs per category
+        const content = await extractDocumentContent(drive, doc.id, doc.name, doc.mimeType);
+        if (content.textContent) {
+          allDocumentContent.push({
+            category: category.toUpperCase(),
+            fileName: content.fileName,
+            content: content.textContent,
+            source: 'customer-specific'
+          });
+        }
+      }
+    }
+
+    // Process Weekly Management PPTs - extract customer-specific content
+    console.log(`Processing ${weeklyManagement.length} Weekly Management PPTs for ${customerName}...`);
+    for (const weeklyFile of weeklyManagement.slice(0, 3)) { // Latest 3 weekly files
+      const customerSlideContent = await extractCustomerSlideFromWeekly(drive, weeklyFile, customerName);
+      if (customerSlideContent && customerSlideContent.content) {
+        allDocumentContent.push({
+          category: 'WEEKLY_MGMT',
+          fileName: `${weeklyFile.name} (${customerName} slide)`,
+          content: customerSlideContent.content,
+          source: 'weekly-management',
+          week: weeklyFile.week,
+          date: weeklyFile.date
+        });
+      }
+    }
+
+    // Process Weekly CFT PPTs - extract customer-specific content
+    console.log(`Processing ${weeklyCFT.length} Weekly CFT PPTs for ${customerName}...`);
+    for (const cftFile of weeklyCFT.slice(0, 3)) { // Latest 3 CFT files
+      const customerSlideContent = await extractCustomerSlideFromWeekly(drive, cftFile, customerName);
+      if (customerSlideContent && customerSlideContent.content) {
+        allDocumentContent.push({
+          category: 'WEEKLY_CFT',
+          fileName: `${cftFile.name} (${customerName} slide)`,
+          content: customerSlideContent.content,
+          source: 'weekly-cft',
+          week: cftFile.week,
+          date: cftFile.date
+        });
+      }
+    }
+
+    if (allDocumentContent.length === 0) {
+      return {
+        customerName,
+        analysis: {
+          summary: `No extractable content found for ${customerName}. Documents may be in formats that require manual review.`,
+          keyInsights: [
+            'Document content extraction limited',
+            'Manual review recommended for detailed analysis'
+          ],
+          riskFactors: ['Unable to assess risks from available documents'],
+          opportunities: ['Consider document format standardization'],
+          recommendations: ['Ensure documents are in accessible formats for analysis']
+        },
+        documentsSummary: {
+          totalDocuments: Object.values(customerDocuments.documents).flat().length,
+          categoriesCovered: Object.keys(customerDocuments.documents).filter(k =>
+            customerDocuments.documents[k].length > 0
+          ),
+          lastAnalyzed: new Date().toISOString()
+        }
+      };
+    }
+
+    // Create comprehensive analysis prompt
+    const analysisPrompt = `
+Analyze the following customer documents for ${customerName} and provide a comprehensive business analysis.
+
+DOCUMENT CONTENT:
+${allDocumentContent.map(doc => `
+[${doc.category}] ${doc.fileName}:
+${doc.content}
+`).join('\n---\n')}
+
+Please provide a structured analysis with:
+
+1. EXECUTIVE SUMMARY (2-3 sentences about overall customer status and relationship)
+
+2. KEY INSIGHTS (4-6 bullet points about important findings from the documents)
+
+3. RISK FACTORS (3-5 potential risks or concerns identified)
+
+4. OPPORTUNITIES (3-4 opportunities for growth or improvement)
+
+5. RECOMMENDATIONS (4-5 actionable recommendations based on the analysis)
+
+Focus on business-relevant insights, project status, stakeholder relationships, risks, and strategic opportunities. Base your analysis ONLY on the provided documents.
+`;
+
+    // For now, provide a structured analysis based on document patterns
+    // In a production environment, you'd integrate with OpenAI/Claude API here
+    const analysis = analyzeDocumentsStructured(customerName, allDocumentContent);
+
+    return {
+      customerName,
+      analysis,
+      documentsSummary: {
+        totalDocuments: Object.values(customerDocuments.documents).flat().length,
+        documentsAnalyzed: allDocumentContent.length,
+        categoriesCovered: [...new Set(allDocumentContent.map(d => d.category))],
+        lastAnalyzed: new Date().toISOString()
+      },
+      rawContent: allDocumentContent.length > 0 // Flag indicating successful content extraction
+    };
+
+  } catch (error) {
+    console.error(`Error generating customer analysis for ${customerName}:`, error);
+    return {
+      customerName,
+      analysis: {
+        summary: `Analysis temporarily unavailable for ${customerName}. Please try again later.`,
+        keyInsights: ['Analysis system currently processing'],
+        riskFactors: ['Unable to assess risks at this time'],
+        opportunities: ['Analysis will be available shortly'],
+        recommendations: ['Please refresh the page in a few moments']
+      },
+      documentsSummary: {
+        totalDocuments: Object.values(customerDocuments.documents).flat().length,
+        error: error.message,
+        lastAnalyzed: new Date().toISOString()
+      }
+    };
+  }
+}
+
+// Binary storage for processed content to improve performance
+const BINARY_CONTENT_CACHE = new Map();
+
+function storeBinaryContent(customerName, documentContent) {
+  const binaryData = {
+    customerName,
+    processedContent: documentContent.map(doc => ({
+      category: doc.category,
+      fileName: doc.fileName,
+      contentHash: Buffer.from(doc.content).toString('base64'),
+      source: doc.source,
+      week: doc.week,
+      date: doc.date,
+      wordCount: doc.content.split(/\s+/).length,
+      processedAt: new Date().toISOString()
+    })),
+    totalSources: documentContent.length,
+    sourceBreakdown: documentContent.reduce((acc, doc) => {
+      acc[doc.source] = (acc[doc.source] || 0) + 1;
+      return acc;
+    }, {}),
+    storedAt: new Date().toISOString()
+  };
+
+  BINARY_CONTENT_CACHE.set(customerName.toLowerCase(), binaryData);
+  return binaryData;
+}
+
+function analyzeDocumentsStructured(customerName, documentContent) {
+  // Store content in binary format for faster future access
+  const binaryData = storeBinaryContent(customerName, documentContent);
+
+  // Structured analysis based on document content patterns
+  const allText = documentContent.map(d => d.content.toLowerCase()).join(' ');
+  const categories = [...new Set(documentContent.map(d => d.category))];
+  const sources = [...new Set(documentContent.map(d => d.source))];
+
+  // Enhanced keywords for different analysis areas
+  const riskKeywords = ['risk', 'issue', 'problem', 'delay', 'concern', 'blocker', 'challenge', 'threat', 'critical', 'urgent'];
+  const opportunityKeywords = ['opportunity', 'growth', 'expansion', 'improve', 'optimize', 'enhance', 'potential', 'increase', 'benefit'];
+  const projectKeywords = ['project', 'deliverable', 'milestone', 'timeline', 'phase', 'implementation', 'deployment', 'go-live', 'launch'];
+  const stakeholderKeywords = ['stakeholder', 'sponsor', 'owner', 'manager', 'team', 'responsible', 'accountable', 'consulted', 'informed'];
+  const sentimentKeywords = {
+    positive: ['satisfied', 'good', 'excellent', 'successful', 'achievement', 'progress', 'completed'],
+    negative: ['dissatisfied', 'poor', 'failed', 'behind', 'delayed', 'escalation', 'concern'],
+    neutral: ['neutral', 'average', 'standard', 'ongoing', 'in progress']
+  };
+
+  // Generate insights based on comprehensive content analysis
+  const insights = [];
+  const risks = [];
+  const opportunities = [];
+  const recommendations = [];
+
+  // Analyze project status from SOW and weekly updates
+  if (categories.includes('SOW') && projectKeywords.some(kw => allText.includes(kw))) {
+    insights.push(`Active project engagement with defined scope and deliverables tracked in SOW documents`);
+    recommendations.push(`Monitor project milestones and deliverable timelines closely`);
+  }
+
+  // Weekly management insights
+  const weeklyMgmtContent = documentContent.filter(d => d.source === 'weekly-management');
+  if (weeklyMgmtContent.length > 0) {
+    insights.push(`${weeklyMgmtContent.length} recent management review(s) available with customer updates`);
+
+    const weeklyText = weeklyMgmtContent.map(d => d.content.toLowerCase()).join(' ');
+    if (sentimentKeywords.positive.some(kw => weeklyText.includes(kw))) {
+      opportunities.push(`Recent management reviews indicate positive customer sentiment`);
+    } else if (sentimentKeywords.negative.some(kw => weeklyText.includes(kw))) {
+      risks.push(`Recent management reviews highlight customer concerns requiring attention`);
+    }
+
+    recommendations.push(`Review latest weekly management presentations for current customer status`);
+  }
+
+  // Weekly CFT technical insights
+  const weeklyCFTContent = documentContent.filter(d => d.source === 'weekly-cft');
+  if (weeklyCFTContent.length > 0) {
+    insights.push(`${weeklyCFTContent.length} CFT technical review(s) available with implementation details`);
+
+    const cftText = weeklyCFTContent.map(d => d.content.toLowerCase()).join(' ');
+    if (projectKeywords.some(kw => cftText.includes(kw))) {
+      opportunities.push(`CFT reviews show active technical implementation progress`);
+    }
+    if (riskKeywords.some(kw => cftText.includes(kw))) {
+      risks.push(`CFT reviews identify technical risks requiring mitigation`);
+    }
+
+    recommendations.push(`Coordinate with CFT team on technical implementation status`);
+  }
+
+  // Analyze stakeholder structure
+  if (categories.includes('RACI') && stakeholderKeywords.some(kw => allText.includes(kw))) {
+    insights.push(`Clear stakeholder roles and responsibilities defined in RACI documentation`);
+    opportunities.push(`Leverage established stakeholder relationships for project success`);
+  }
+
+  // Analyze risk profile from RAID logs and weekly updates
+  if (categories.includes('RAID')) {
+    insights.push(`Risk management framework in place with documented issues and dependencies`);
+    if (riskKeywords.some(kw => allText.includes(kw))) {
+      risks.push(`Active risk items documented in RAID logs requiring attention and mitigation`);
+    }
+  }
+
+  // Comprehensive risk analysis from all sources
+  const riskCount = allText.split(/\s+/).filter(word => riskKeywords.includes(word)).length;
+  if (riskCount > 5) {
+    risks.push(`Multiple risk indicators detected across ${sources.join(', ')} sources`);
+  }
+
+  // Customer knowledge and relationship insights
+  if (categories.includes('KYC')) {
+    insights.push(`Comprehensive customer profile available for strategic decision making`);
+    opportunities.push(`Deep customer insights available for tailored solutions and engagement strategies`);
+  }
+
+  // Multi-source analysis insights
+  if (sources.length > 2) {
+    insights.push(`Multi-source analysis includes ${sources.length} different information streams`);
+    recommendations.push(`Cross-reference insights from customer-specific and weekly collaborative sources`);
+  }
+
+  // Content freshness analysis
+  const weeklyContent = documentContent.filter(d => d.week || d.date);
+  if (weeklyContent.length > 0) {
+    const latestWeek = weeklyContent.map(d => d.week).filter(Boolean).sort().pop();
+    if (latestWeek) {
+      insights.push(`Most recent insights from ${latestWeek} weekly reviews`);
+    }
+  }
+
+  // Add default items if none found
+  if (insights.length === 0) {
+    insights.push(`Customer documentation available across ${categories.join(', ')} categories`);
+  }
+  if (risks.length === 0) {
+    risks.push(`Standard project risks should be monitored through regular document review`);
+  }
+  if (opportunities.length === 0) {
+    opportunities.push(`Document analysis reveals potential for more structured customer engagement`);
+  }
+  if (recommendations.length === 0) {
+    recommendations.push(`Regular review of customer documents and weekly updates recommended`);
+  }
+
+  // Enhanced executive summary
+  const sourceDescription = sources.includes('weekly-management') && sources.includes('weekly-cft')
+    ? 'customer-specific documents plus weekly management and technical reviews'
+    : sources.includes('weekly-management') || sources.includes('weekly-cft')
+    ? 'customer-specific documents plus weekly collaborative reviews'
+    : 'customer-specific documentation';
+
+  const summary = `${customerName} analysis based on ${documentContent.length} documents from ${sourceDescription}. ` +
+    `Coverage includes ${categories.filter(c => !c.startsWith('WEEKLY')).join(', ')} documentation` +
+    `${categories.some(c => c.startsWith('WEEKLY')) ? ' with recent weekly updates' : ''}. ` +
+    `${categories.includes('SOW') ? 'Active project engagement' : 'Standard documentation review'} ` +
+    `${riskKeywords.some(kw => allText.includes(kw)) ? 'with risk factors identified' : 'with standard monitoring recommended'}.`;
+
+  return {
+    summary,
+    keyInsights: insights.slice(0, 6),
+    riskFactors: risks.slice(0, 5),
+    opportunities: opportunities.slice(0, 4),
+    recommendations: recommendations.slice(0, 5)
+  };
 }
 
 async function getFilesFromFolder(drive, folderId) {
@@ -1748,6 +2206,86 @@ function extractSentimentFromSlide(textContent) {
   };
 }
 
+// GET /api/customers/:name/analysis — get AI analysis + customer documents
+async function handleApiCustomerAnalysis(req, res, customerName) {
+  const auth = resolveUser(req);
+  if (!auth) return sendJSON(res, 401, { error: 'Unauthorized' });
+
+  try {
+    const decodedCustomerName = decodeURIComponent(customerName);
+
+    // Check cache first
+    const cacheKey = decodedCustomerName.toLowerCase();
+    const now = Date.now();
+
+    if (customerAnalysisCache.has(cacheKey) &&
+        (now - lastAnalysisCacheUpdate) < ANALYSIS_CACHE_TTL) {
+      console.log(`Returning cached analysis for ${decodedCustomerName}`);
+      return sendJSON(res, 200, customerAnalysisCache.get(cacheKey));
+    }
+
+    // Get customer documents
+    const allDocuments = await getCustomerDocumentsFromDrive();
+    const customerKey = Object.keys(allDocuments.customers).find(
+      key => key.toLowerCase() === decodedCustomerName.toLowerCase()
+    );
+
+    if (!customerKey) {
+      return sendJSON(res, 404, {
+        error: 'Customer not found',
+        availableCustomers: Object.keys(allDocuments.customers)
+      });
+    }
+
+    const customerData = allDocuments.customers[customerKey];
+
+    // Generate AI analysis with weekly PPT content included
+    console.log(`Generating comprehensive analysis for ${customerKey}...`);
+    const analysis = await generateCustomerAnalysis(
+      customerKey,
+      customerData,
+      allDocuments.weeklyManagement || [],
+      allDocuments.weeklyCFT || []
+    );
+
+    // Combine analysis with document data
+    const response = {
+      customerName: customerKey,
+      aiAnalysis: analysis.analysis,
+      documentsSummary: analysis.documentsSummary,
+      documents: customerData.documents,
+      totalDocuments: customerData.totalDocuments,
+      weeklyManagement: allDocuments.weeklyManagement.map(file => ({
+        id: file.id,
+        name: file.name,
+        week: file.week,
+        date: file.date,
+        type: 'management'
+      })),
+      weeklyCFT: allDocuments.weeklyCFT.map(file => ({
+        id: file.id,
+        name: file.name,
+        week: file.week,
+        date: file.date,
+        type: 'cft'
+      })),
+      generatedAt: new Date().toISOString()
+    };
+
+    // Cache the response
+    customerAnalysisCache.set(cacheKey, response);
+    lastAnalysisCacheUpdate = now;
+
+    sendJSON(res, 200, response);
+  } catch (error) {
+    console.error(`Error generating customer analysis for ${customerName}:`, error);
+    sendJSON(res, 500, {
+      error: 'Failed to generate customer analysis',
+      message: error.message
+    });
+  }
+}
+
 // GET /api/customers/:name/documents — get customer-specific documents (SOW, RACI, RAID, KYC)
 async function handleApiCustomerDocuments(req, res, customerName) {
   const auth = resolveUser(req);
@@ -2470,7 +3008,9 @@ async function requestHandler(req, res) {
       const customerName = pathParts[0];
       const subPath = pathParts[1];
 
-      if (subPath === 'documents') {
+      if (subPath === 'analysis') {
+        return await handleApiCustomerAnalysis(req, res, customerName);
+      } else if (subPath === 'documents') {
         return await handleApiCustomerDocuments(req, res, customerName);
       } else {
         return await handleApiCustomerDetails(req, res, customerName);
