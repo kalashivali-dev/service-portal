@@ -1581,6 +1581,135 @@ function handleHealthz(req, res) {
   sendJSON(res, 200, { status: 'ok' });
 }
 
+// GET /api/folder-analysis — analyze folder structure for dashboard design
+async function handleFolderAnalysis(req, res) {
+  const auth = resolveUser(req);
+  if (!auth) return sendJSON(res, 401, { error: 'Unauthorized' });
+
+  try {
+    console.log('Starting folder structure analysis...');
+    const drive = await getDriveService();
+
+    const analysis = {
+      timestamp: new Date().toISOString(),
+      rootFolder: DRIVE_FOLDER_ID,
+      structure: {},
+      recommendations: {}
+    };
+
+    // Get root folder info
+    const rootFolder = await drive.files.get({
+      fileId: DRIVE_FOLDER_ID,
+      fields: 'id, name, mimeType'
+    });
+
+    analysis.structure.root = {
+      id: rootFolder.data.id,
+      name: rootFolder.data.name,
+      type: 'folder'
+    };
+
+    // List all items in root folder
+    const rootItems = await drive.files.list({
+      q: `'${DRIVE_FOLDER_ID}' in parents`,
+      fields: 'files(id, name, mimeType, createdTime, modifiedTime, size)',
+      orderBy: 'name'
+    });
+
+    analysis.structure.rootItems = [];
+    const folders = [];
+    const files = [];
+
+    for (const item of rootItems.data.files || []) {
+      const itemInfo = {
+        id: item.id,
+        name: item.name,
+        type: item.mimeType === 'application/vnd.google-apps.folder' ? 'folder' : 'file',
+        mimeType: item.mimeType,
+        created: item.createdTime,
+        modified: item.modifiedTime,
+        size: item.size
+      };
+
+      if (itemInfo.type === 'folder') {
+        folders.push(itemInfo);
+
+        // Analyze each subfolder
+        try {
+          const subItems = await drive.files.list({
+            q: `'${item.id}' in parents`,
+            fields: 'files(id, name, mimeType, createdTime, modifiedTime, size)',
+            orderBy: 'name'
+          });
+
+          itemInfo.contents = [];
+          for (const subItem of subItems.data.files || []) {
+            const subItemInfo = {
+              id: subItem.id,
+              name: subItem.name,
+              type: subItem.mimeType === 'application/vnd.google-apps.folder' ? 'folder' : 'file',
+              mimeType: subItem.mimeType,
+              created: subItem.createdTime,
+              modified: subItem.modifiedTime,
+              size: subItem.size
+            };
+
+            // If it's a folder, get one level deeper
+            if (subItemInfo.type === 'folder') {
+              try {
+                const deepItems = await drive.files.list({
+                  q: `'${subItem.id}' in parents`,
+                  fields: 'files(id, name, mimeType, createdTime, modifiedTime)',
+                  orderBy: 'name'
+                });
+                subItemInfo.contents = deepItems.data.files?.map(deepItem => ({
+                  id: deepItem.id,
+                  name: deepItem.name,
+                  type: deepItem.mimeType === 'application/vnd.google-apps.folder' ? 'folder' : 'file',
+                  mimeType: deepItem.mimeType
+                })) || [];
+              } catch (e) {
+                subItemInfo.error = e.message;
+              }
+            }
+
+            itemInfo.contents.push(subItemInfo);
+          }
+        } catch (e) {
+          itemInfo.error = e.message;
+        }
+      } else {
+        files.push(itemInfo);
+      }
+
+      analysis.structure.rootItems.push(itemInfo);
+    }
+
+    // Generate insights and recommendations
+    analysis.insights = {
+      totalFolders: folders.length,
+      totalFiles: files.length,
+      folderNames: folders.map(f => f.name),
+      fileTypes: [...new Set(files.map(f => f.mimeType))],
+      customerFolders: folders.filter(f =>
+        f.name.toLowerCase().includes('abbvie') ||
+        f.name.toLowerCase().includes('alcon') ||
+        !f.name.toLowerCase().includes('weekly')
+      ),
+      weeklyFolders: folders.filter(f =>
+        f.name.toLowerCase().includes('weekly') ||
+        f.name.toLowerCase().includes('management') ||
+        f.name.toLowerCase().includes('cft')
+      )
+    };
+
+    sendJSON(res, 200, analysis);
+  } catch (error) {
+    console.error('Folder analysis error:', error);
+    sendJSON(res, 500, { error: error.message, details: error.stack });
+  }
+}
+
 // GET /api/drive-debug — debug Google Drive API setup
 async function handleDriveDebug(req, res) {
   const auth = resolveUser(req);
@@ -2016,6 +2145,7 @@ async function requestHandler(req, res) {
     if (pathname === '/oauth2/callback') return await handleOAuthCallback(req, res, parsedUrl.searchParams);
     if (pathname === '/logout') return handleLogout(req, res);
     if (pathname === '/healthz') return handleHealthz(req, res);
+    if (pathname === '/api/folder-analysis') return await handleFolderAnalysis(req, res);
     if (pathname === '/api/drive-debug') return await handleDriveDebug(req, res);
     if (pathname.startsWith('/api/slide-image/')) {
       const slideParams = pathname.slice('/api/slide-image/'.length);
