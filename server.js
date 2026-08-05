@@ -459,29 +459,64 @@ async function processWeeklyFolder(drive, folderId, type) {
 async function extractDocumentContent(drive, fileId, fileName, mimeType) {
   try {
     let textContent = '';
+    let extractionMethod = 'unknown';
 
-    // Extract text based on file type
-    if (mimeType.includes('presentation') || mimeType.includes('powerpoint')) {
-      // Extract PowerPoint content
+    // Try multiple extraction methods for each file type
+    if (mimeType.includes('presentation') || mimeType.includes('powerpoint') || fileName.toLowerCase().includes('.ppt')) {
+      console.log(`    Extracting PowerPoint content from: ${fileName}`);
       textContent = await extractPowerPointText(drive, fileId);
-    } else if (mimeType.includes('document') || mimeType.includes('word')) {
-      // Extract Word document content
+      extractionMethod = 'powerpoint';
+    } else if (mimeType.includes('document') || mimeType.includes('word') || fileName.toLowerCase().includes('.doc')) {
+      console.log(`    Extracting Word document content from: ${fileName}`);
       textContent = await extractWordText(drive, fileId);
-    } else if (mimeType.includes('spreadsheet') || mimeType.includes('excel')) {
-      // Extract Excel content
+      extractionMethod = 'word';
+    } else if (mimeType.includes('spreadsheet') || mimeType.includes('excel') || fileName.toLowerCase().includes('.xls')) {
+      console.log(`    Extracting Excel content from: ${fileName}`);
       textContent = await extractExcelText(drive, fileId);
-    } else if (mimeType.includes('text/plain')) {
-      // Extract plain text
+      extractionMethod = 'excel';
+    } else if (mimeType.includes('text/plain') || fileName.toLowerCase().includes('.txt')) {
+      console.log(`    Extracting plain text from: ${fileName}`);
       textContent = await extractPlainText(drive, fileId);
+      extractionMethod = 'text';
+    } else {
+      // Try generic text extraction for unknown types
+      console.log(`    Attempting generic extraction for: ${fileName} (${mimeType})`);
+      try {
+        textContent = await extractPlainText(drive, fileId);
+        extractionMethod = 'generic';
+      } catch (genericError) {
+        console.log(`    Generic extraction failed, trying export methods...`);
+        // Try different export formats
+        const exportFormats = ['text/plain', 'application/rtf'];
+        for (const format of exportFormats) {
+          try {
+            const response = await drive.files.export({ fileId: fileId, mimeType: format });
+            if (response.data) {
+              textContent = response.data;
+              extractionMethod = `export-${format}`;
+              break;
+            }
+          } catch (exportError) {
+            console.log(`    Export as ${format} failed: ${exportError.message}`);
+          }
+        }
+      }
     }
+
+    const finalContent = textContent.substring(0, 50000); // Increased to 50k chars per file
+    const wordCount = finalContent.split(/\s+/).filter(word => word.length > 0).length;
+
+    console.log(`    ✅ Extraction complete: ${fileName} - ${wordCount} words via ${extractionMethod}`);
 
     return {
       fileName,
       fileId,
       mimeType,
-      textContent: textContent.substring(0, 10000), // Limit to 10k chars per file
-      wordCount: textContent.split(/\s+/).length,
-      extractedAt: new Date().toISOString()
+      textContent: finalContent,
+      wordCount: wordCount,
+      extractedAt: new Date().toISOString(),
+      extractionMethod: extractionMethod,
+      success: wordCount > 0
     };
   } catch (error) {
     console.error(`Error extracting content from ${fileName}:`, error.message);
@@ -607,26 +642,53 @@ async function generateCustomerAnalysis(customerName, customerDocuments, weeklyM
     const drive = await getDriveService();
     const allDocumentContent = [];
 
-    // Process each customer-specific document category
+    // Process ALL customer-specific documents (no limits)
     for (const category of ['sow', 'raci', 'raid', 'kyc']) {
       const documents = customerDocuments.documents[category] || [];
 
-      for (const doc of documents.slice(0, 5)) { // Limit to 5 docs per category
-        const content = await extractDocumentContent(drive, doc.id, doc.name, doc.mimeType);
-        if (content.textContent) {
+      console.log(`Processing ALL ${documents.length} ${category.toUpperCase()} documents for ${customerName}...`);
+
+      for (const doc of documents) { // Process ALL documents, no limit
+        try {
+          console.log(`  Extracting content from: ${doc.name}`);
+          const content = await extractDocumentContent(drive, doc.id, doc.name, doc.mimeType);
+
+          // Always include the document in analysis, even with minimal content
           allDocumentContent.push({
             category: category.toUpperCase(),
             fileName: content.fileName,
-            content: content.textContent,
-            source: 'customer-specific'
+            content: content.textContent || `Document: ${doc.name} (${doc.mimeType})`, // Fallback content
+            source: 'customer-specific',
+            fileId: doc.id,
+            mimeType: doc.mimeType,
+            extractedWordCount: content.wordCount || 0
+          });
+
+          if (content.textContent && content.textContent.length > 0) {
+            console.log(`  ✅ Successfully extracted ${content.wordCount} words from ${doc.name}`);
+          } else {
+            console.log(`  ⚠️ Limited content from ${doc.name} - included metadata for analysis`);
+          }
+        } catch (error) {
+          console.error(`  ❌ Error processing ${doc.name}:`, error.message);
+          // Still include the document with basic info
+          allDocumentContent.push({
+            category: category.toUpperCase(),
+            fileName: doc.name,
+            content: `Document: ${doc.name} - Processing error: ${error.message}`,
+            source: 'customer-specific',
+            fileId: doc.id,
+            mimeType: doc.mimeType,
+            extractedWordCount: 0,
+            error: error.message
           });
         }
       }
     }
 
-    // Process Weekly Management PPTs - extract customer-specific content
-    console.log(`Processing ${weeklyManagement.length} Weekly Management PPTs for ${customerName}...`);
-    for (const weeklyFile of weeklyManagement.slice(0, 3)) { // Latest 3 weekly files
+    // Process ALL Weekly Management PPTs - extract customer-specific content
+    console.log(`Processing ALL ${weeklyManagement.length} Weekly Management PPTs for ${customerName}...`);
+    for (const weeklyFile of weeklyManagement) { // Process ALL weekly files, no limit
       const customerSlideContent = await extractCustomerSlideFromWeekly(drive, weeklyFile, customerName);
       if (customerSlideContent && customerSlideContent.content) {
         allDocumentContent.push({
@@ -640,9 +702,9 @@ async function generateCustomerAnalysis(customerName, customerDocuments, weeklyM
       }
     }
 
-    // Process Weekly CFT PPTs - extract customer-specific content
-    console.log(`Processing ${weeklyCFT.length} Weekly CFT PPTs for ${customerName}...`);
-    for (const cftFile of weeklyCFT.slice(0, 3)) { // Latest 3 CFT files
+    // Process ALL Weekly CFT PPTs - extract customer-specific content
+    console.log(`Processing ALL ${weeklyCFT.length} Weekly CFT PPTs for ${customerName}...`);
+    for (const cftFile of weeklyCFT) { // Process ALL CFT files, no limit
       const customerSlideContent = await extractCustomerSlideFromWeekly(drive, cftFile, customerName);
       if (customerSlideContent && customerSlideContent.content) {
         allDocumentContent.push({
@@ -656,21 +718,25 @@ async function generateCustomerAnalysis(customerName, customerDocuments, weeklyM
       }
     }
 
+    console.log(`Total documents processed for ${customerName}: ${allDocumentContent.length}`);
+    console.log(`Document processing breakdown:`, allDocumentContent.map(d => `${d.category}: ${d.fileName} (${d.extractedWordCount || 0} words)`));
+
     if (allDocumentContent.length === 0) {
       return {
         customerName,
         analysis: {
-          summary: `No extractable content found for ${customerName}. Documents may be in formats that require manual review.`,
+          summary: `No documents found for analysis for ${customerName}. Please check document availability in Google Drive.`,
           keyInsights: [
-            'Document content extraction limited',
-            'Manual review recommended for detailed analysis'
+            'No documents available for processing',
+            'Verify document access permissions and folder structure'
           ],
-          riskFactors: ['Unable to assess risks from available documents'],
-          opportunities: ['Consider document format standardization'],
-          recommendations: ['Ensure documents are in accessible formats for analysis']
+          riskFactors: ['Unable to perform analysis without document access'],
+          opportunities: ['Ensure proper document organization in Google Drive'],
+          recommendations: ['Check Google Drive folder permissions and document availability']
         },
         documentsSummary: {
           totalDocuments: Object.values(customerDocuments.documents).flat().length,
+          documentsAnalyzed: 0,
           categoriesCovered: Object.keys(customerDocuments.documents).filter(k =>
             customerDocuments.documents[k].length > 0
           ),
@@ -714,8 +780,15 @@ Focus on business-relevant insights, project status, stakeholder relationships, 
       documentsSummary: {
         totalDocuments: Object.values(customerDocuments.documents).flat().length,
         documentsAnalyzed: allDocumentContent.length,
+        documentsWithContent: allDocumentContent.filter(d => d.extractedWordCount > 0).length,
         categoriesCovered: [...new Set(allDocumentContent.map(d => d.category))],
-        lastAnalyzed: new Date().toISOString()
+        lastAnalyzed: new Date().toISOString(),
+        processingDetails: allDocumentContent.map(d => ({
+          category: d.category,
+          fileName: d.fileName,
+          wordCount: d.extractedWordCount || 0,
+          hasContent: (d.extractedWordCount || 0) > 0
+        }))
       },
       rawContent: allDocumentContent.length > 0 // Flag indicating successful content extraction
     };
