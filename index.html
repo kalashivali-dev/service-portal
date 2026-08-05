@@ -1355,6 +1355,211 @@
     /* =======================================================
        Admin Panel Styles
        ======================================================= */
+    /* Customer Documents Styles */
+    .customer-documents-container {
+      padding: 24px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .customer-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 32px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .customer-header h2 {
+      color: var(--text-primary);
+      font-size: 28px;
+      font-weight: 600;
+      margin: 0;
+    }
+
+    .document-stats {
+      display: flex;
+      gap: 12px;
+    }
+
+    .stat-badge {
+      background: var(--accent-soft);
+      color: var(--accent);
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .documents-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+
+    .document-section {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-primary);
+      font-size: 16px;
+      font-weight: 600;
+      margin: 0 0 16px 0;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .section-title svg {
+      color: var(--accent);
+    }
+
+    .documents-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .document-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      background: var(--bg-surface2);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .document-item:hover {
+      background: var(--bg-hover);
+      border-color: var(--accent);
+    }
+
+    .doc-icon {
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+
+    .doc-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .doc-name {
+      color: var(--text-primary);
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .doc-meta {
+      display: flex;
+      gap: 12px;
+      margin-top: 4px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .doc-action {
+      color: var(--text-muted);
+      opacity: 0;
+      transition: var(--transition);
+    }
+
+    .document-item:hover .doc-action {
+      opacity: 1;
+    }
+
+    .no-documents {
+      text-align: center;
+      color: var(--text-muted);
+      font-style: italic;
+      padding: 24px;
+      background: var(--bg-surface2);
+      border-radius: var(--radius-sm);
+    }
+
+    .weekly-sections {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      gap: 24px;
+      margin-top: 32px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+    }
+
+    .weekly-section {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+    }
+
+    .week-selector-container {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .week-selector-dropdown {
+      flex: 1;
+      padding: 8px 12px;
+      background: var(--bg-surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      font-size: 14px;
+    }
+
+    .view-btn {
+      padding: 8px 16px;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .view-btn:hover {
+      background: var(--accent-hover);
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .documents-grid,
+      .weekly-sections {
+        grid-template-columns: 1fr;
+      }
+
+      .customer-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
+
+      .week-selector-container {
+        flex-direction: column;
+      }
+
+      .week-selector-dropdown {
+        width: 100%;
+      }
+    }
+
+    /* Admin Panel Styles */
     .admin-container {
       max-width: 1200px;
       margin: 0 auto;
@@ -2433,8 +2638,6 @@ let currentCustomerData = null;
 async function loadCustomerDetails(customerName) {
   currentCustomer = customerName;
 
-  // Page title now handled by the slide content display
-
   // Show loading state
   const loadingEl = document.querySelector('.customer-loading');
   const filesEl = document.getElementById('customer-files');
@@ -2445,7 +2648,8 @@ async function loadCustomerDetails(customerName) {
   weekSelector.style.display = 'none';
 
   try {
-    const response = await fetch(`/api/customers/${encodeURIComponent(customerName)}`);
+    // Load customer documents (SOW, RACI, RAID, KYC) + weekly data
+    const response = await fetch(`/api/customers/${encodeURIComponent(customerName)}/documents`);
 
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -2454,26 +2658,224 @@ async function loadCustomerDetails(customerName) {
     const data = await response.json();
     currentCustomerData = data;
 
-    // Setup week dropdown
-    setupWeekDropdown(data);
-
-    // Show most recent week by default
-    if (data.mostRecentWeek) {
-      renderCustomerWeek(data, data.mostRecentWeek.id);
-    } else {
-      renderCustomerFiles(data);
-    }
+    // Render the new customer documents layout
+    renderCustomerDocuments(data);
 
   } catch (error) {
     console.error('Error loading customer details:', error);
-    renderCustomerError(error.message);
+
+    // Fallback to old API if new one fails
+    try {
+      const fallbackResponse = await fetch(`/api/customers/${encodeURIComponent(customerName)}`);
+      if (fallbackResponse.ok) {
+        const fallbackData = await fallbackResponse.json();
+        currentCustomerData = fallbackData;
+        setupWeekDropdown(fallbackData);
+        if (fallbackData.mostRecentWeek) {
+          renderCustomerWeek(fallbackData, fallbackData.mostRecentWeek.id);
+        } else {
+          renderCustomerFiles(fallbackData);
+        }
+      } else {
+        renderCustomerError(error.message);
+      }
+    } catch (fallbackError) {
+      renderCustomerError(error.message);
+    }
   } finally {
     loadingEl.style.display = 'none';
     filesEl.style.display = 'block';
-    if (currentCustomerData && currentCustomerData.weeks && currentCustomerData.weeks.length > 0) {
-      weekSelector.style.display = 'flex';
-    }
   }
+}
+
+// New function to render customer documents with SOW, RACI, RAID, KYC sections
+function renderCustomerDocuments(data) {
+  const filesEl = document.getElementById('customer-files');
+  const weekSelector = document.getElementById('week-selector');
+
+  // Create the new customer documents layout
+  const documentsHtml = `
+    <div class="customer-documents-container">
+      <!-- Customer Header -->
+      <div class="customer-header">
+        <h2>${data.customerName}</h2>
+        <div class="document-stats">
+          <span class="stat-badge">Total Documents: ${data.totalDocuments || 0}</span>
+        </div>
+      </div>
+
+      <!-- Documents Grid -->
+      <div class="documents-grid">
+        <!-- SOW Documents Section -->
+        <div class="document-section">
+          <h3 class="section-title">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+              <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/>
+            </svg>
+            Statement of Work (SOW) - ${(data.documents?.sow?.length || 0)} items
+          </h3>
+          <div class="documents-list">
+            ${renderDocumentsList(data.documents?.sow || [], 'sow')}
+          </div>
+        </div>
+
+        <!-- RACI Matrix Section -->
+        <div class="document-section">
+          <h3 class="section-title">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <path d="M9 9h6v6H9z"/>
+            </svg>
+            RACI Matrix - ${(data.documents?.raci?.length || 0)} items
+          </h3>
+          <div class="documents-list">
+            ${renderDocumentsList(data.documents?.raci || [], 'raci')}
+          </div>
+        </div>
+
+        <!-- RAID Log Section -->
+        <div class="document-section">
+          <h3 class="section-title">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path d="M12 9v4M12 17h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            RAID Log - ${(data.documents?.raid?.length || 0)} items
+          </h3>
+          <div class="documents-list">
+            ${renderDocumentsList(data.documents?.raid || [], 'raid')}
+          </div>
+        </div>
+
+        <!-- KYC Documents Section -->
+        <div class="document-section">
+          <h3 class="section-title">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+            </svg>
+            Know Your Customer (KYC) - ${(data.documents?.kyc?.length || 0)} items
+          </h3>
+          <div class="documents-list">
+            ${renderDocumentsList(data.documents?.kyc || [], 'kyc')}
+          </div>
+        </div>
+      </div>
+
+      <!-- Weekly Selectors Section -->
+      <div class="weekly-sections">
+        <!-- Weekly Management Selector -->
+        <div class="weekly-section">
+          <h3 class="section-title">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <rect x="3" y="4" width="18" height="12" rx="2"/>
+              <path d="M7 16h10M12 8h5M12 12h3"/>
+            </svg>
+            Weekly Management PPTs
+          </h3>
+          <div class="week-selector-container">
+            <select class="week-selector-dropdown" id="management-week-selector">
+              <option value="">Select a week...</option>
+              ${(data.weeklyManagement || []).map(week =>
+                `<option value="${week.id}">${week.week} - ${week.name}</option>`
+              ).join('')}
+            </select>
+            <button class="view-btn" onclick="viewWeeklyDocument('management')">View</button>
+          </div>
+        </div>
+
+        <!-- Weekly CFT Selector -->
+        <div class="weekly-section">
+          <h3 class="section-title">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <rect x="3" y="4" width="18" height="12" rx="2"/>
+              <path d="M7 16h10M8 8h8M8 12h6"/>
+            </svg>
+            Weekly CFT PPTs
+          </h3>
+          <div class="week-selector-container">
+            <select class="week-selector-dropdown" id="cft-week-selector">
+              <option value="">Select a week...</option>
+              ${(data.weeklyCFT || []).map(week =>
+                `<option value="${week.id}">${week.week} - ${week.name}</option>`
+              ).join('')}
+            </select>
+            <button class="view-btn" onclick="viewWeeklyDocument('cft')">View</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  filesEl.innerHTML = documentsHtml;
+  weekSelector.style.display = 'none'; // Hide old week selector
+}
+
+function renderDocumentsList(documents, category) {
+  if (!documents || documents.length === 0) {
+    return `<div class="no-documents">No ${category.toUpperCase()} documents available</div>`;
+  }
+
+  return documents.map(doc => {
+    const fileIcon = getFileIcon(doc.mimeType);
+    const fileSize = doc.size ? formatFileSize(parseInt(doc.size)) : '';
+    const modifiedDate = doc.modifiedTime ? new Date(doc.modifiedTime).toLocaleDateString() : '';
+
+    return `
+      <div class="document-item" onclick="openDocument('${doc.id}', '${doc.name}')">
+        <div class="doc-icon">${fileIcon}</div>
+        <div class="doc-info">
+          <div class="doc-name">${doc.name}</div>
+          <div class="doc-meta">
+            ${fileSize ? `<span class="file-size">${fileSize}</span>` : ''}
+            ${modifiedDate ? `<span class="mod-date">Modified: ${modifiedDate}</span>` : ''}
+          </div>
+        </div>
+        <div class="doc-action">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M9 12l2 2 4-4"/>
+          </svg>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function getFileIcon(mimeType) {
+  if (mimeType?.includes('presentation') || mimeType?.includes('powerpoint')) {
+    return '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M7 16h10M12 8h5M12 12h3"/></svg>';
+  } else if (mimeType?.includes('spreadsheet') || mimeType?.includes('excel')) {
+    return '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>';
+  } else if (mimeType?.includes('document') || mimeType?.includes('word')) {
+    return '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>';
+  }
+  return '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>';
+}
+
+function formatFileSize(bytes) {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+function openDocument(fileId, fileName) {
+  // Open Google Drive document in new tab
+  window.open(`https://drive.google.com/file/d/${fileId}/view`, '_blank');
+}
+
+function viewWeeklyDocument(type) {
+  const selectorId = type === 'management' ? 'management-week-selector' : 'cft-week-selector';
+  const selector = document.getElementById(selectorId);
+  const selectedFileId = selector.value;
+
+  if (!selectedFileId) {
+    alert('Please select a week first.');
+    return;
+  }
+
+  // Open the selected weekly document
+  window.open(`https://drive.google.com/file/d/${selectedFileId}/view`, '_blank');
 }
 
 function setupWeekDropdown(data) {

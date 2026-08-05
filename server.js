@@ -261,6 +261,262 @@ let customerDataCache = null;
 let lastCacheUpdate = 0;
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
+// Binary document cache for customer-specific documents
+let customerDocumentsCache = new Map();
+let lastDocumentsCacheUpdate = 0;
+const DOCUMENTS_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+
+// New comprehensive customer documents loader
+async function getCustomerDocumentsFromDrive() {
+  const now = Date.now();
+  if (customerDocumentsCache.size > 0 && (now - lastDocumentsCacheUpdate) < DOCUMENTS_CACHE_TTL) {
+    console.log('Returning cached customer documents');
+    return Object.fromEntries(customerDocumentsCache);
+  }
+
+  try {
+    console.log(`Fetching customer documents from Drive folder: ${DRIVE_FOLDER_ID}`);
+    const drive = await getDriveService();
+
+    // Get root folder contents
+    const rootContents = await drive.files.list({
+      q: `'${DRIVE_FOLDER_ID}' in parents`,
+      fields: 'files(id, name, mimeType, createdTime, modifiedTime)',
+      orderBy: 'name'
+    });
+
+    const customerDocuments = {
+      customers: {},
+      weeklyManagement: [],
+      weeklyCFT: []
+    };
+
+    console.log(`Found ${rootContents.data.files.length} items in root folder`);
+
+    for (const item of rootContents.data.files || []) {
+      const itemName = item.name.toLowerCase();
+
+      // Identify customer folders (Abbvie, Alcon, etc.)
+      if (item.mimeType === 'application/vnd.google-apps.folder' &&
+          !itemName.includes('weekly') &&
+          !itemName.includes('management') &&
+          !itemName.includes('cft')) {
+
+        console.log(`Processing customer folder: ${item.name}`);
+        const customerName = item.name;
+        customerDocuments.customers[customerName] = await processCustomerFolder(drive, item.id, customerName);
+      }
+
+      // Identify Weekly Management PPTs folder
+      else if (item.mimeType === 'application/vnd.google-apps.folder' &&
+               (itemName.includes('weekly') && itemName.includes('management'))) {
+        console.log(`Processing Weekly Management folder: ${item.name}`);
+        customerDocuments.weeklyManagement = await processWeeklyFolder(drive, item.id, 'management');
+      }
+
+      // Identify Weekly CFT PPTs folder
+      else if (item.mimeType === 'application/vnd.google-apps.folder' &&
+               (itemName.includes('weekly') && itemName.includes('cft'))) {
+        console.log(`Processing Weekly CFT folder: ${item.name}`);
+        customerDocuments.weeklyCFT = await processWeeklyFolder(drive, item.id, 'cft');
+      }
+    }
+
+    // Cache the results
+    customerDocumentsCache.clear();
+    customerDocumentsCache.set('data', customerDocuments);
+    lastDocumentsCacheUpdate = now;
+
+    console.log(`Processed ${Object.keys(customerDocuments.customers).length} customers, ${customerDocuments.weeklyManagement.length} management files, ${customerDocuments.weeklyCFT.length} CFT files`);
+
+    return customerDocuments;
+  } catch (error) {
+    console.error('Error fetching customer documents from Drive:', error);
+    throw error;
+  }
+}
+
+async function processCustomerFolder(drive, folderId, customerName) {
+  const customerData = {
+    name: customerName,
+    folderId: folderId,
+    documents: {
+      sow: [],
+      raci: [],
+      raid: [],
+      kyc: []
+    }
+  };
+
+  try {
+    // Get contents of customer folder
+    const customerContents = await drive.files.list({
+      q: `'${folderId}' in parents`,
+      fields: 'files(id, name, mimeType, createdTime, modifiedTime, size)',
+      orderBy: 'name'
+    });
+
+    for (const item of customerContents.data.files || []) {
+      const fileName = item.name.toLowerCase();
+
+      // SOW folder or files
+      if (item.mimeType === 'application/vnd.google-apps.folder' && fileName.includes('sow')) {
+        console.log(`  Processing SOW folder: ${item.name}`);
+        const sowFiles = await getFilesFromFolder(drive, item.id);
+        customerData.documents.sow.push(...sowFiles.map(f => ({...f, category: 'sow', folder: item.name})));
+      }
+      // RACI files (direct files or folder)
+      else if (fileName.includes('raci')) {
+        if (item.mimeType === 'application/vnd.google-apps.folder') {
+          const raciFiles = await getFilesFromFolder(drive, item.id);
+          customerData.documents.raci.push(...raciFiles.map(f => ({...f, category: 'raci'})));
+        } else {
+          customerData.documents.raci.push({...item, category: 'raci'});
+        }
+      }
+      // RAID files (direct files or folder)
+      else if (fileName.includes('raid')) {
+        if (item.mimeType === 'application/vnd.google-apps.folder') {
+          const raidFiles = await getFilesFromFolder(drive, item.id);
+          customerData.documents.raid.push(...raidFiles.map(f => ({...f, category: 'raid'})));
+        } else {
+          customerData.documents.raid.push({...item, category: 'raid'});
+        }
+      }
+      // KYC/Know Your Customer PPTs
+      else if (fileName.includes('know') && fileName.includes('customer') ||
+               fileName.includes('kyc')) {
+        if (item.mimeType === 'application/vnd.google-apps.folder') {
+          const kycFiles = await getFilesFromFolder(drive, item.id);
+          customerData.documents.kyc.push(...kycFiles.map(f => ({...f, category: 'kyc'})));
+        } else {
+          customerData.documents.kyc.push({...item, category: 'kyc'});
+        }
+      }
+      // Any other PPT files in root of customer folder
+      else if (fileName.includes('.ppt') || item.mimeType.includes('presentation')) {
+        // Try to categorize based on filename
+        if (fileName.includes('sow')) {
+          customerData.documents.sow.push({...item, category: 'sow'});
+        } else if (fileName.includes('know') || fileName.includes('kyc')) {
+          customerData.documents.kyc.push({...item, category: 'kyc'});
+        } else {
+          customerData.documents.kyc.push({...item, category: 'kyc'}); // Default PPTs to KYC
+        }
+      }
+    }
+
+    // Calculate totals
+    customerData.totalDocuments =
+      customerData.documents.sow.length +
+      customerData.documents.raci.length +
+      customerData.documents.raid.length +
+      customerData.documents.kyc.length;
+
+    console.log(`  Customer ${customerName}: ${customerData.totalDocuments} documents (SOW: ${customerData.documents.sow.length}, RACI: ${customerData.documents.raci.length}, RAID: ${customerData.documents.raid.length}, KYC: ${customerData.documents.kyc.length})`);
+
+  } catch (error) {
+    console.error(`Error processing customer folder ${customerName}:`, error);
+  }
+
+  return customerData;
+}
+
+async function processWeeklyFolder(drive, folderId, type) {
+  const weeklyFiles = [];
+
+  try {
+    const files = await getFilesFromFolder(drive, folderId);
+
+    for (const file of files) {
+      // Extract week/date information from filename
+      const weekInfo = extractWeekInfoFromFilename(file.name);
+      weeklyFiles.push({
+        ...file,
+        type: type,
+        week: weekInfo.week,
+        date: weekInfo.date,
+        sortDate: weekInfo.sortDate
+      });
+    }
+
+    // Sort by date, most recent first
+    weeklyFiles.sort((a, b) => b.sortDate - a.sortDate);
+
+  } catch (error) {
+    console.error(`Error processing weekly ${type} folder:`, error);
+  }
+
+  return weeklyFiles;
+}
+
+async function getFilesFromFolder(drive, folderId) {
+  try {
+    const response = await drive.files.list({
+      q: `'${folderId}' in parents`,
+      fields: 'files(id, name, mimeType, createdTime, modifiedTime, size)',
+      orderBy: 'modifiedTime desc'
+    });
+
+    return response.data.files || [];
+  } catch (error) {
+    console.error(`Error getting files from folder ${folderId}:`, error);
+    return [];
+  }
+}
+
+function extractWeekInfoFromFilename(filename) {
+  const result = {
+    week: 'Unknown',
+    date: null,
+    sortDate: 0
+  };
+
+  // Try to match various date/week patterns
+  const weekMatches = [
+    filename.match(/Week\s*(\d+)/i),
+    filename.match(/W(\d+)/i),
+    filename.match(/week(\d+)/i)
+  ].find(match => match);
+
+  if (weekMatches) {
+    result.week = `Week ${weekMatches[1]}`;
+  }
+
+  // Try date patterns YYYY-MM-DD, MM-DD-YYYY, etc.
+  const dateMatches = [
+    filename.match(/(\d{4})-(\d{1,2})-(\d{1,2})/),
+    filename.match(/(\d{1,2})-(\d{1,2})-(\d{4})/),
+    filename.match(/(\d{4})_(\d{1,2})_(\d{1,2})/),
+    filename.match(/(\d{1,2})_(\d{1,2})_(\d{4})/)
+  ].find(match => match);
+
+  if (dateMatches) {
+    let year, month, day;
+    if (dateMatches[1].length === 4) {
+      // YYYY-MM-DD format
+      year = parseInt(dateMatches[1]);
+      month = parseInt(dateMatches[2]) - 1; // JS months are 0-indexed
+      day = parseInt(dateMatches[3]);
+    } else {
+      // MM-DD-YYYY format
+      month = parseInt(dateMatches[1]) - 1;
+      day = parseInt(dateMatches[2]);
+      year = parseInt(dateMatches[3]);
+    }
+
+    const date = new Date(year, month, day);
+    result.date = date.toISOString().split('T')[0];
+    result.sortDate = date.getTime();
+
+    if (!weekMatches) {
+      result.week = `Date: ${result.date}`;
+    }
+  }
+
+  return result;
+}
+
 async function getCustomerDataFromDrive() {
   const now = Date.now();
   if (customerDataCache && (now - lastCacheUpdate) < CACHE_TTL) {
@@ -1492,7 +1748,61 @@ function extractSentimentFromSlide(textContent) {
   };
 }
 
-// GET /api/customers/:name — get specific customer data
+// GET /api/customers/:name/documents — get customer-specific documents (SOW, RACI, RAID, KYC)
+async function handleApiCustomerDocuments(req, res, customerName) {
+  const auth = resolveUser(req);
+  if (!auth) return sendJSON(res, 401, { error: 'Unauthorized' });
+
+  try {
+    const allDocuments = await getCustomerDocumentsFromDrive();
+    const decodedCustomerName = decodeURIComponent(customerName);
+
+    // Find customer by name (case insensitive)
+    const customerKey = Object.keys(allDocuments.customers).find(
+      key => key.toLowerCase() === decodedCustomerName.toLowerCase()
+    );
+
+    if (!customerKey) {
+      return sendJSON(res, 404, {
+        error: 'Customer not found',
+        availableCustomers: Object.keys(allDocuments.customers)
+      });
+    }
+
+    const customerData = allDocuments.customers[customerKey];
+
+    // Add weekly data for this customer
+    const response = {
+      customerName: customerKey,
+      documents: customerData.documents,
+      totalDocuments: customerData.totalDocuments,
+      weeklyManagement: allDocuments.weeklyManagement.map(file => ({
+        id: file.id,
+        name: file.name,
+        week: file.week,
+        date: file.date,
+        type: 'management'
+      })),
+      weeklyCFT: allDocuments.weeklyCFT.map(file => ({
+        id: file.id,
+        name: file.name,
+        week: file.week,
+        date: file.date,
+        type: 'cft'
+      }))
+    };
+
+    sendJSON(res, 200, response);
+  } catch (error) {
+    console.error(`Error fetching documents for customer ${customerName}:`, error);
+    sendJSON(res, 500, {
+      error: 'Failed to fetch customer documents',
+      message: error.message
+    });
+  }
+}
+
+// GET /api/customers/:name — get specific customer data (legacy endpoint, keep for compatibility)
 async function handleApiCustomerDetails(req, res, customerName) {
   const auth = resolveUser(req);
   if (!auth) return sendJSON(res, 401, { error: 'Unauthorized' });
@@ -2156,8 +2466,15 @@ async function requestHandler(req, res) {
     if (pathname === '/api/stats') return handleApiStats(req, res);
     if (pathname === '/api/customers') return await handleApiCustomers(req, res, method);
     if (pathname.startsWith('/api/customers/')) {
-      const customerName = pathname.slice('/api/customers/'.length);
-      return await handleApiCustomerDetails(req, res, customerName);
+      const pathParts = pathname.slice('/api/customers/'.length).split('/');
+      const customerName = pathParts[0];
+      const subPath = pathParts[1];
+
+      if (subPath === 'documents') {
+        return await handleApiCustomerDocuments(req, res, customerName);
+      } else {
+        return await handleApiCustomerDetails(req, res, customerName);
+      }
     }
     // Admin routes
     if (pathname === '/api/admin/customers') return await handleAdminCustomers(req, res, method);
