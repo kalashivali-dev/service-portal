@@ -2968,12 +2968,29 @@ async function handleApiCustomerDetails(req, res, customerName) {
   } catch (error) {
     console.error(`Error fetching data for customer ${customerName}:`, error);
 
-    // Return empty state instead of 500 error
+    // Fall back to CSV data for sentiment information
+    const csvCustomers = getCustomersFromCache();
+    const decodedCustomerName = decodeURIComponent(customerName);
+    const csvCustomer = csvCustomers.find(c => c.customer_name === decodedCustomerName);
+
+    let sentimentLabel = 'Neutral';
+    let sentimentDescription = 'No sentiment details available';
+
+    if (csvCustomer && csvCustomer.sentiment) {
+      // Convert CSV sentiment to proper label format
+      sentimentLabel = csvCustomer.sentiment.charAt(0).toUpperCase() + csvCustomer.sentiment.slice(1);
+      sentimentDescription = `Customer sentiment from latest data: ${sentimentLabel.toLowerCase()}`;
+    }
+
+    // Return CSV fallback data
     sendJSON(res, 200, {
-      customerName: decodeURIComponent(customerName),
+      customerName: decodedCustomerName,
       files: [],
       totalFiles: 0,
       error: true,
+      csvFallback: true,
+      sentimentLabel: sentimentLabel,
+      sentimentDescription: sentimentDescription,
       message: `Drive API unavailable: ${error.message}`
     });
   }
