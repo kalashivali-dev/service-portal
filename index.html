@@ -1696,6 +1696,93 @@
       margin-bottom: 32px;
     }
 
+    .docs-tab-section {
+      grid-column: 1 / -1;
+    }
+
+    .docs-tab-header {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      background: none;
+      border: none;
+      padding: 0;
+      margin: 0;
+      color: var(--text-primary);
+      font-size: 16px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .docs-tab-header:hover {
+      color: var(--accent);
+    }
+
+    .docs-tab-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .docs-tab-title svg {
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+
+    .docs-tab-counts {
+      flex: 1;
+      font-size: 13px;
+      font-weight: 400;
+      color: var(--text-muted);
+    }
+
+    .docs-tab-chevron {
+      flex-shrink: 0;
+      color: var(--text-muted);
+      transition: transform 0.2s ease;
+    }
+
+    .docs-tab-chevron.open {
+      transform: rotate(180deg);
+    }
+
+    .docs-tab-content {
+      display: none;
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border-light);
+    }
+
+    .docs-tab-content.open {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+
+    @media (max-width: 900px) {
+      .docs-tab-content.open {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .docs-tab-analysis {
+      grid-column: 1 / -1;
+    }
+
+    .subsection-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-primary);
+      font-size: 14px;
+      font-weight: 600;
+      margin: 0 0 12px 0;
+    }
+
     .document-section {
       background: var(--bg-surface);
       border: 1px solid var(--border);
@@ -3113,6 +3200,114 @@ function renderCustomerAnalysis(data) {
   weekSelector.style.display = 'none'; // Hide old week selector
 }
 
+// Split a list of documents evenly into N columns (first column gets any remainder)
+function splitIntoColumns(items, columnCount) {
+  const columns = Array.from({ length: columnCount }, () => []);
+  const base = Math.floor(items.length / columnCount);
+  let remainder = items.length % columnCount;
+  let offset = 0;
+  for (let i = 0; i < columnCount; i++) {
+    const size = base + (remainder > 0 ? 1 : 0);
+    if (remainder > 0) remainder--;
+    columns[i] = items.slice(offset, offset + size);
+    offset += size;
+  }
+  return columns;
+}
+
+// Horizontal collapsible tab header + chevron, shared by the SOW and Customer Information tabs
+function renderDocsTabHeader(iconSvg, title, countsLabel) {
+  return `
+    <button class="docs-tab-header" onclick="toggleDocsTab(this)" aria-expanded="false">
+      <span class="docs-tab-title">
+        ${iconSvg}
+        ${title}
+      </span>
+      <span class="docs-tab-counts">${countsLabel}</span>
+      <svg class="docs-tab-chevron" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M6 9l6 6 6-6"/>
+      </svg>
+    </button>
+  `;
+}
+
+// SOW tab: all SOW documents split across 3 columns under one dropdown
+function renderSowTab(data, includeAnalysis) {
+  const sowDocs = data.documents?.sow || [];
+  const columns = splitIntoColumns(sowDocs, 3);
+  const icon = `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+        <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/>
+      </svg>`;
+
+  return `
+    <div class="document-section docs-tab-section">
+      ${renderDocsTabHeader(icon, 'Statement of Work (SOW)', `${sowDocs.length} items`)}
+      <div class="docs-tab-content">
+        ${includeAnalysis ? `<div class="docs-tab-analysis">${renderCategoryAnalysis(data.aiAnalysis?.categoryAnalyses?.sow, 'sow')}</div>` : ''}
+        ${columns.map(col => `
+          <div class="document-subsection">
+            <div class="documents-list">
+              ${renderDocumentsList(col, 'sow')}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+// Customer Information tab: RACI, RAID, and KYC side by side in 3 columns under one dropdown
+function renderCustomerInformationTab(data, includeAnalysis) {
+  const raciCount = data.documents?.raci?.length || 0;
+  const raidCount = data.documents?.raid?.length || 0;
+  const kycCount = data.documents?.kyc?.length || 0;
+  const icon = `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <rect x="3" y="3" width="18" height="18" rx="2"/>
+        <path d="M9 9h6v6H9z"/>
+      </svg>`;
+
+  return `
+    <div class="document-section docs-tab-section">
+      ${renderDocsTabHeader(icon, 'Customer Information', `${raciCount + raidCount + kycCount} items &middot; RACI ${raciCount} &middot; RAID ${raidCount} &middot; KYC ${kycCount}`)}
+      <div class="docs-tab-content">
+        <div class="document-subsection">
+          <h4 class="subsection-title">RACI Matrix - ${raciCount} items</h4>
+          ${includeAnalysis ? renderCategoryAnalysis(data.aiAnalysis?.categoryAnalyses?.raci, 'raci') : ''}
+          <div class="documents-list">
+            ${renderDocumentsList(data.documents?.raci || [], 'raci')}
+          </div>
+        </div>
+
+        <div class="document-subsection">
+          <h4 class="subsection-title">RAID Log - ${raidCount} items</h4>
+          ${includeAnalysis ? renderCategoryAnalysis(data.aiAnalysis?.categoryAnalyses?.raid, 'raid') : ''}
+          <div class="documents-list">
+            ${renderDocumentsList(data.documents?.raid || [], 'raid')}
+          </div>
+        </div>
+
+        <div class="document-subsection">
+          <h4 class="subsection-title">Know Your Customer (KYC) - ${kycCount} items</h4>
+          ${includeAnalysis ? renderCategoryAnalysis(data.aiAnalysis?.categoryAnalyses?.kyc, 'kyc') : ''}
+          <div class="documents-list">
+            ${renderDocumentsList(data.documents?.kyc || [], 'kyc')}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function toggleDocsTab(btn) {
+  const content = btn.nextElementSibling;
+  const chevron = btn.querySelector('.docs-tab-chevron');
+  const isOpen = content.classList.contains('open');
+  content.classList.toggle('open', !isOpen);
+  chevron.classList.toggle('open', !isOpen);
+  btn.setAttribute('aria-expanded', String(!isOpen));
+}
+
 // Separate function for documents section (used by both analysis and fallback)
 function renderDocumentsSection(data) {
   return `
@@ -3120,63 +3315,8 @@ function renderDocumentsSection(data) {
       <div class="documents-section">
         <h3 class="documents-section-title">Customer Documents</h3>
         <div class="documents-grid">
-          <!-- SOW Documents Section -->
-          <div class="document-section">
-            <h3 class="section-title">
-              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-                <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/>
-              </svg>
-              Statement of Work (SOW) - ${(data.documents?.sow?.length || 0)} items
-            </h3>
-            ${renderCategoryAnalysis(data.aiAnalysis?.categoryAnalyses?.sow, 'sow')}
-            <div class="documents-list">
-              ${renderDocumentsList(data.documents?.sow || [], 'sow')}
-            </div>
-          </div>
-
-          <!-- RACI Matrix Section -->
-          <div class="document-section">
-            <h3 class="section-title">
-              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <rect x="3" y="3" width="18" height="18" rx="2"/>
-                <path d="M9 9h6v6H9z"/>
-              </svg>
-              RACI Matrix - ${(data.documents?.raci?.length || 0)} items
-            </h3>
-            ${renderCategoryAnalysis(data.aiAnalysis?.categoryAnalyses?.raci, 'raci')}
-            <div class="documents-list">
-              ${renderDocumentsList(data.documents?.raci || [], 'raci')}
-            </div>
-          </div>
-
-          <!-- RAID Log Section -->
-          <div class="document-section">
-            <h3 class="section-title">
-              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path d="M12 9v4M12 17h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-              </svg>
-              RAID Log - ${(data.documents?.raid?.length || 0)} items
-            </h3>
-            ${renderCategoryAnalysis(data.aiAnalysis?.categoryAnalyses?.raid, 'raid')}
-            <div class="documents-list">
-              ${renderDocumentsList(data.documents?.raid || [], 'raid')}
-            </div>
-          </div>
-
-          <!-- KYC Documents Section -->
-          <div class="document-section">
-            <h3 class="section-title">
-              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-              </svg>
-              Know Your Customer (KYC) - ${(data.documents?.kyc?.length || 0)} items
-            </h3>
-            ${renderCategoryAnalysis(data.aiAnalysis?.categoryAnalyses?.kyc, 'kyc')}
-            <div class="documents-list">
-              ${renderDocumentsList(data.documents?.kyc || [], 'kyc')}
-            </div>
-          </div>
+          ${renderSowTab(data, true)}
+          ${renderCustomerInformationTab(data, true)}
         </div>
 
         <!-- Weekly Selectors Section -->
@@ -3243,59 +3383,8 @@ function renderCustomerDocuments(data) {
 
       <!-- Documents Grid -->
       <div class="documents-grid">
-        <!-- SOW Documents Section -->
-        <div class="document-section">
-          <h3 class="section-title">
-            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-              <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/>
-            </svg>
-            Statement of Work (SOW) - ${(data.documents?.sow?.length || 0)} items
-          </h3>
-          <div class="documents-list">
-            ${renderDocumentsList(data.documents?.sow || [], 'sow')}
-          </div>
-        </div>
-
-        <!-- RACI Matrix Section -->
-        <div class="document-section">
-          <h3 class="section-title">
-            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <rect x="3" y="3" width="18" height="18" rx="2"/>
-              <path d="M9 9h6v6H9z"/>
-            </svg>
-            RACI Matrix - ${(data.documents?.raci?.length || 0)} items
-          </h3>
-          <div class="documents-list">
-            ${renderDocumentsList(data.documents?.raci || [], 'raci')}
-          </div>
-        </div>
-
-        <!-- RAID Log Section -->
-        <div class="document-section">
-          <h3 class="section-title">
-            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path d="M12 9v4M12 17h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-            RAID Log - ${(data.documents?.raid?.length || 0)} items
-          </h3>
-          <div class="documents-list">
-            ${renderDocumentsList(data.documents?.raid || [], 'raid')}
-          </div>
-        </div>
-
-        <!-- KYC Documents Section -->
-        <div class="document-section">
-          <h3 class="section-title">
-            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-            </svg>
-            Know Your Customer (KYC) - ${(data.documents?.kyc?.length || 0)} items
-          </h3>
-          <div class="documents-list">
-            ${renderDocumentsList(data.documents?.kyc || [], 'kyc')}
-          </div>
-        </div>
+        ${renderSowTab(data, false)}
+        ${renderCustomerInformationTab(data, false)}
       </div>
 
       <!-- Weekly Selectors Section -->
@@ -3442,16 +3531,17 @@ function renderDocumentsList(documents, category) {
     return `<div class="no-documents">No ${category.toUpperCase()} documents available</div>`;
   }
 
-  return documents.map(doc => {
+  return documents.map((doc, index) => {
     const fileIcon = getFileIcon(doc.mimeType);
     const fileSize = doc.size ? formatFileSize(parseInt(doc.size)) : '';
     const modifiedDate = doc.modifiedTime ? new Date(doc.modifiedTime).toLocaleDateString() : '';
+    const displayName = category === 'sow' ? shortenSowName(doc.name, index) : doc.name;
 
     return `
       <div class="document-item" onclick="openDocument('${doc.id}', '${doc.name}')">
         <div class="doc-icon">${fileIcon}</div>
         <div class="doc-info">
-          <div class="doc-name">${doc.name}</div>
+          <div class="doc-name" title="${doc.name}">${displayName}</div>
           <div class="doc-meta">
             ${fileSize ? `<span class="file-size">${fileSize}</span>` : ''}
             ${modifiedDate ? `<span class="mod-date">Modified: ${modifiedDate}</span>` : ''}
@@ -3465,6 +3555,14 @@ function renderDocumentsList(documents, category) {
       </div>
     `;
   }).join('');
+}
+
+// SOW file names are long (e.g. "AbbVie-Sycamore Informatics SOW #8 Professional Services.pptx")
+// and overflow their card at 3-column width, so show a short "SOW #n" label instead (full name stays in the title tooltip).
+function shortenSowName(name, index) {
+  const match = name.match(/SOW\s*#?\s*(\d+)/i);
+  const num = match ? match[1] : index + 1;
+  return `SOW #${num}`;
 }
 
 function getFileIcon(mimeType) {
